@@ -23,6 +23,8 @@ import { useUIStore } from "../../stores/ui-store";
 import { useThemeStore } from "../../stores/theme-store";
 import { useSettingsStore } from "../../stores/settings-store";
 import { useRouter } from "../../hooks/use-router";
+import { useEditorChrome } from "./shell/editor-chrome"; // DLT Cafe
+import { goHome } from "./shell/go-home"; // DLT Cafe: home works on desktop too
 import {
   startTour,
   ONBOARDING_KEY,
@@ -64,6 +66,7 @@ export const EditorActionRail: React.FC<{ orientation?: "vertical" | "horizontal
   const { mode: themeMode, toggleTheme } = useThemeStore();
   const { openSettings } = useSettingsStore();
   const { navigate } = useRouter();
+  const chrome = useEditorChrome();
 
   const themeLabel =
     themeMode === "auto"
@@ -97,7 +100,7 @@ export const EditorActionRail: React.FC<{ orientation?: "vertical" | "horizontal
           icon={<House size={16} aria-hidden />}
           size="sm"
           variant="ghost"
-          onClick={() => navigate("welcome")}
+          onClick={() => void goHome(chrome, navigate)}
         />
       </Tooltip>
 
