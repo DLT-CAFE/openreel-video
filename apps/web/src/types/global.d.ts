@@ -308,6 +308,7 @@ declare global {
           }>;
           read(args: { handle: string; offset: number; length: number }): Promise<ArrayBuffer>;
           close(args: { handle: string }): Promise<void>;
+          readEditJson(args: { path: string }): Promise<{ ok: boolean; error?: string; text: string; path: string }>;
         };
       };
       rigging?: {

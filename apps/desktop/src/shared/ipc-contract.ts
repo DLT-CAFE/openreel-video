@@ -64,6 +64,7 @@ export const localMediaReadArgsSchema = z.object({
   length: z.number().int().positive(),
 });
 export const localMediaCloseArgsSchema = z.object({ handle: z.string().uuid() });
+export const localEditJsonArgsSchema = z.object({ path: z.string().min(1).max(4096) });
 
 export const riggingBackendModeSchema = z.enum(["configured", "bundled", "system"]);
 export type RiggingBackendMode = z.infer<typeof riggingBackendModeSchema>;

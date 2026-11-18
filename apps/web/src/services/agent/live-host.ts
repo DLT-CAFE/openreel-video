@@ -56,6 +56,7 @@ import {
 import { runMotionRenderQueue } from "../../motion/render-queue-runner";
 import { createMulticamHostBridge } from "./multicam-bridge";
 import { importLocalMediaFile } from "./dltcafe/local-media-import";
+import { importPortableEditFromPath } from "./dltcafe/portable-import";
 
 const MIME_BY_EXT: Record<string, string> = {
   mp4: "video/mp4",
@@ -287,6 +288,12 @@ export class LiveEditorHost implements EditingHost {
   ): Promise<ImportedMediaRef> {
     this.requireOpenProject();
     return importLocalMediaFile(filePath, options);
+  }
+
+  /** DLT Cafe: load an openreel-edit JSON from an approved folder, relinking media by name + size. */
+  async importPortableEditFromPath(jsonPath: string, options?: { mediaDir?: string }) {
+    this.requireOpenProject();
+    return importPortableEditFromPath(jsonPath, options);
   }
 
   async exportMotionScene(

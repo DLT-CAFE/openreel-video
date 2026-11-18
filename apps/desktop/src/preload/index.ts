@@ -101,6 +101,7 @@ contextBridge.exposeInMainWorld("openreel", {
       open: (args: unknown) => ipcRenderer.invoke(CHANNELS.mediaLocalOpen, args),
       read: (args: unknown) => ipcRenderer.invoke(CHANNELS.mediaLocalRead, args),
       close: (args: unknown) => ipcRenderer.invoke(CHANNELS.mediaLocalClose, args),
+      readEditJson: (args: unknown) => ipcRenderer.invoke(CHANNELS.mediaLocalReadEditJson, args),
     },
   },
   rigging: {

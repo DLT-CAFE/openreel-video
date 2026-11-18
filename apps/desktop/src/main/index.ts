@@ -53,7 +53,7 @@ import {
   probeAudioStreams,
 } from "./ipc/media";
 import { fetchUrl } from "./ipc/fetch-url";
-import { localMediaReader } from "./ipc/local-media";
+import { localMediaReader, readLocalEditJson } from "./ipc/local-media";
 import { probeRiggingBackend, rigHumanoidModel } from "./sidecar/rigging-backend";
 import { disposeAuroraClient } from "./aurora/client";
 import {
@@ -69,6 +69,7 @@ import {
   localMediaOpenArgsSchema,
   localMediaReadArgsSchema,
   localMediaCloseArgsSchema,
+  localEditJsonArgsSchema,
   auroraPreviewSessionCancelArgsSchema,
   auroraPreviewSessionStartArgsSchema,
   auroraPreviewSessionStartResultSchema,
@@ -176,6 +177,7 @@ app.whenReady().then(() => {
   handle(CHANNELS.mediaLocalOpen, localMediaOpenArgsSchema, (a) => localMediaReader.open(a));
   handle(CHANNELS.mediaLocalRead, localMediaReadArgsSchema, (a) => localMediaReader.read(a));
   handle(CHANNELS.mediaLocalClose, localMediaCloseArgsSchema, (a) => localMediaReader.close(a));
+  handle(CHANNELS.mediaLocalReadEditJson, localEditJsonArgsSchema, (a) => readLocalEditJson(a));
   handle(CHANNELS.auroraRenderPreview, auroraRenderPreviewArgsSchema, async (args) =>
     auroraRenderPreviewResultSchema.parse(
       await renderAuroraPreview(args as AuroraRenderPreviewArgs),

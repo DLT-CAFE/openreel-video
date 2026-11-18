@@ -22,6 +22,7 @@ const LONG_RUNNING_TOOLS = new Set<string>([
   "render_motion_frame",
   "render_creation_preview",
   "sync_motion_to_audio",
+  "import_portable_edit", // DLT Cafe: imports every media file of an edit
 ]);
 const LONG_RUNNING_TIMEOUT_MS = 30 * 60_000;
 const STANDARD_CALL_TIMEOUT_MS = 120_000;

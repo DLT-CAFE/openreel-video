@@ -20,6 +20,20 @@ const fail = (message: string, code = "ERROR"): ToolResult => ({
   error: { code, message },
 });
 
+export interface PortableEditImportResult {
+  readonly projectName: string;
+  readonly tracks: number;
+  readonly clips: number;
+  readonly mediaRefs: number;
+  readonly linked: number;
+  readonly filesImported: number;
+  readonly filesReused: number;
+  readonly audioSeparated: number;
+  readonly clampedClips: number;
+  readonly durationSec: number;
+  readonly missing: readonly { readonly id: string; readonly name: string; readonly reason: string }[];
+}
+
 export const DLTCAFE_TOOLS: RegisteredTool[] = [
   {
     name: "import_media_from_path",
@@ -43,6 +57,36 @@ export const DLTCAFE_TOOLS: RegisteredTool[] = [
         name: typeof args.name === "string" ? args.name : undefined,
       });
       return ok(`Imported ${ref.type} "${ref.name}" (${ref.durationSec.toFixed(2)}s)`, ref);
+    },
+  },
+  {
+    name: "import_portable_edit",
+    domain: "project",
+    title: "Import portable edit from local path",
+    description:
+      "Load an openreel-edit v2 JSON (e.g. written by pr-handoff `prh.py openreel`) from an approved local folder and REPLACE the current project's timeline with it as one undo step (desktop app only). Media are relinked by file name + size from mediaDir (absolute, ~/, or relative to the JSON's folder; default: the JSON's folder), importing each file once with the same folder rules as import_media_from_path. Audio-track refs to video files get their audio separated. Returns linked/missing counts. Create or open the target project first, then save_project.",
+    inputSchema: obj({ path: str, mediaDir: str }, ["path"]),
+    readOnly: false,
+    destructive: true,
+    expensive: true,
+    handler: async (args, host) => {
+      if (typeof host.importPortableEditFromPath !== "function") {
+        return fail("import_portable_edit is not available in this host", "UNSUPPORTED");
+      }
+      if (typeof args.path !== "string" || args.path.trim() === "") {
+        return fail("path is required", "INVALID_PARAMS");
+      }
+      host.requireOpenProject();
+      const res = await host.importPortableEditFromPath(args.path, {
+        mediaDir: typeof args.mediaDir === "string" ? args.mediaDir : undefined,
+      });
+      const summary =
+        `Imported "${res.projectName}": ${res.clips} clips on ${res.tracks} tracks, ${res.durationSec.toFixed(2)}s; ` +
+        `media ${res.linked}/${res.mediaRefs} linked (${res.filesImported} files imported, ${res.filesReused} reused, ` +
+        `${res.audioSeparated} audio separated)` +
+        (res.clampedClips ? `; ${res.clampedClips} clip end(s) trimmed to decoded media length` : "") +
+        (res.missing.length ? `; ${res.missing.length} MISSING` : "");
+      return ok(summary, res);
     },
   },
 ];

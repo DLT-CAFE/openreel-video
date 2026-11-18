@@ -35,6 +35,7 @@ export const CHANNELS = {
   mediaLocalOpen: "openreel:media:localOpen",
   mediaLocalRead: "openreel:media:localRead",
   mediaLocalClose: "openreel:media:localClose",
+  mediaLocalReadEditJson: "openreel:media:localReadEditJson",
   riggingProbeBackend: "openreel:rigging:probeBackend",
   riggingRigHumanoidModel: "openreel:rigging:rigHumanoidModel",
   cloudFetch: "openreel:cloud:fetch",

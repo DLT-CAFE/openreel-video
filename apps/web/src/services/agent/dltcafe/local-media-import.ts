@@ -14,13 +14,16 @@ type LocalFileBridge = NonNullable<
 export async function readLocalMediaFile(
   bridge: LocalFileBridge,
   filePath: string,
-  options?: { name?: string },
+  options?: { name?: string; expectedSize?: number },
 ): Promise<File> {
   const opened = await bridge.open({ path: filePath });
   if (!opened.ok) {
     throw new Error(opened.error ?? `Could not open ${filePath}`);
   }
   try {
+    if (options?.expectedSize !== undefined && opened.size !== options.expectedSize) {
+      throw new Error(`Size mismatch for ${opened.name}: ${opened.size} bytes on disk, ${options.expectedSize} expected`);
+    }
     const parts: Blob[] = [];
     let offset = 0;
     while (offset < opened.size) {
@@ -43,7 +46,7 @@ export async function readLocalMediaFile(
 
 export async function importLocalMediaFile(
   filePath: string,
-  options?: { name?: string },
+  options?: { name?: string; expectedSize?: number },
 ): Promise<ImportedMediaRef> {
   const bridge = window.openreel?.media?.readLocalFile;
   if (!bridge) {

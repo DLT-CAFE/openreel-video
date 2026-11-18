@@ -74,3 +74,36 @@ describe("DLT Cafe tools", () => {
     expect(res.ok).toBe(false);
   });
 });
+
+describe("import_portable_edit", () => {
+  it("is registered as a destructive project tool needing path", () => {
+    const tool = getTool("import_portable_edit");
+    expect(tool?.domain).toBe("project");
+    expect(tool?.destructive).toBe(true);
+    expect((tool?.inputSchema as { required: string[] }).required).toEqual(["path"]);
+  });
+
+  it("returns UNSUPPORTED on a host without importPortableEditFromPath", async () => {
+    const res = await executeTool("import_portable_edit", { path: "~/DLT-Cafe/a.json" }, new HeadlessHost(makeEmptyProject()));
+    expect(res.error?.code).toBe("UNSUPPORTED");
+  });
+
+  it("passes path + mediaDir and summarises missing media", async () => {
+    let got: unknown;
+    const host: EditingHost = Object.assign(new HeadlessHost(makeEmptyProject()), {
+      async importPortableEditFromPath(path: string, options?: { mediaDir?: string }) {
+        got = { path, mediaDir: options?.mediaDir };
+        return {
+          projectName: "hero", tracks: 2, clips: 3, mediaRefs: 2, linked: 1, filesImported: 1, filesReused: 0,
+          audioSeparated: 0, clampedClips: 0, durationSec: 10,
+          missing: [{ id: "m2", name: "b.mp4", reason: "File not found" }],
+        };
+      },
+    });
+    const res = await executeTool("import_portable_edit", { path: "/x/e.json", mediaDir: "../media" }, host);
+    expect(res.ok).toBe(true);
+    expect(got).toEqual({ path: "/x/e.json", mediaDir: "../media" });
+    expect(res.summary).toMatch(/1\/2 linked/);
+    expect(res.summary).toMatch(/1 MISSING/);
+  });
+});

@@ -109,9 +109,20 @@ function fail(error: string): LocalMediaCheck {
 }
 
 /** Pure-ish validation (touches the filesystem only via realpath/stat). */
-export async function checkLocalMediaPath(
+export function checkLocalMediaPath(
   args: { path: string; maxBytes?: number },
   options: LocalMediaOptions = {},
+): Promise<LocalMediaCheck> {
+  return checkApprovedFile(args, LOCAL_MEDIA_MIME, DEFAULT_LOCAL_MEDIA_MAX_BYTES, options);
+}
+
+export const EDIT_JSON_MAX_BYTES = 5_000_000;
+
+async function checkApprovedFile(
+  args: { path: string; maxBytes?: number },
+  allowed: Readonly<Record<string, string>>,
+  hardCap: number,
+  options: LocalMediaOptions,
 ): Promise<LocalMediaCheck> {
   const home = options.home ?? os.homedir();
   const requested = expandHome(args.path.trim(), home);
@@ -135,16 +146,38 @@ export async function checkLocalMediaPath(
     return fail(`Path is outside the approved media folders (${roots.join(", ")})`);
   }
   const ext = path.extname(realPath).slice(1).toLowerCase();
-  if (!(ext in LOCAL_MEDIA_MIME)) {
-    return fail(`Not an allowed media type: .${ext || "(none)"}`);
+  if (!(ext in allowed)) {
+    return fail(`Not an allowed file type: .${ext || "(none)"}`);
   }
   const stat = await fs.stat(realPath);
   if (!stat.isFile()) return fail("Not a regular file");
-  const cap = Math.min(args.maxBytes ?? DEFAULT_LOCAL_MEDIA_MAX_BYTES, DEFAULT_LOCAL_MEDIA_MAX_BYTES);
+  const cap = Math.min(args.maxBytes ?? hardCap, hardCap);
   if (stat.size > cap) {
     return fail(`File too large: ${stat.size} bytes (max ${cap})`);
   }
   return { ok: true, realPath, size: stat.size, ext };
+}
+
+export interface LocalEditJsonResult {
+  readonly ok: boolean;
+  readonly error?: string;
+  readonly text: string;
+  /** Resolved absolute path of the JSON file (used to resolve a relative mediaDir). */
+  readonly path: string;
+}
+
+/** Read an OpenReel edit JSON (.json, <=5 MB) from an approved folder as text. */
+export async function readLocalEditJson(
+  args: { path: string },
+  options: LocalMediaOptions = {},
+): Promise<LocalEditJsonResult> {
+  const check = await checkApprovedFile(args, { json: "application/json" }, EDIT_JSON_MAX_BYTES, options);
+  if (!check.ok) return { ok: false, error: check.error, text: "", path: "" };
+  try {
+    return { ok: true, text: await fs.readFile(check.realPath, "utf8"), path: check.realPath };
+  } catch (error) {
+    return { ok: false, error: error instanceof Error ? error.message : "Read failed", text: "", path: "" };
+  }
 }
 
 interface OpenEntry {

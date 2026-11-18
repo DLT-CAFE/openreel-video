@@ -256,6 +256,11 @@ export interface EditingHost {
   importMediaFromUrl?(url: string, options?: { name?: string }): Promise<ImportedMediaRef>;
   /** DLT Cafe: import a file from an approved local folder (desktop host only). */
   importMediaFromPath?(path: string, options?: { name?: string }): Promise<ImportedMediaRef>;
+  /** DLT Cafe: load an openreel-edit JSON from an approved folder and relink its media (desktop host only). */
+  importPortableEditFromPath?(
+    path: string,
+    options?: { mediaDir?: string },
+  ): Promise<import("./registry-dltcafe").PortableEditImportResult>;
   /**
    * Render a motion composition to a finished video file (mp4 / transparent
    * WebM / ProRes 4444 MOV). Optional because it needs the renderer-side motion

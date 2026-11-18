@@ -5,6 +5,7 @@ import path from "node:path";
 import {
   LocalMediaReader,
   checkLocalMediaPath,
+  readLocalEditJson,
   configuredRoots,
   expandHome,
   isInsideRoot,
@@ -24,6 +25,9 @@ beforeAll(() => {
   writeFileSync(path.join(root, "UPPER.MOV"), Buffer.alloc(10, 1));
   writeFileSync(path.join(root, "notes.txt"), "hello");
   writeFileSync(path.join(outside, "secret.mp4"), Buffer.alloc(10, 2));
+  writeFileSync(path.join(root, "edit.openreel.json"), '{"format":"openreel-edit"}');
+  writeFileSync(path.join(root, "big.json"), Buffer.alloc(5_000_001, 32));
+  writeFileSync(path.join(outside, "edit.json"), "{}");
   // Symlink inside the root that points outside it.
   symlinkSync(path.join(outside, "secret.mp4"), path.join(root, "escape.mp4"));
   // Symlinked directory inside the root that points outside it.
@@ -99,7 +103,7 @@ describe("checkLocalMediaPath", () => {
   it("rejects a bad extension", async () => {
     const res = await checkLocalMediaPath({ path: path.join(root, "notes.txt") }, opts());
     expect(res.ok).toBe(false);
-    if (!res.ok) expect(res.error).toMatch(/Not an allowed media type/);
+    if (!res.ok) expect(res.error).toMatch(/Not an allowed file type/);
   });
 
   it("checks the extension of the resolved file, not the link name", async () => {
@@ -156,5 +160,20 @@ describe("LocalMediaReader", () => {
     const opened = await reader.open({ path: path.join(outside, "secret.mp4") });
     expect(opened.ok).toBe(false);
     expect(opened.handle).toBe("");
+  });
+});
+
+describe("readLocalEditJson", () => {
+  it("reads a .json inside a root", async () => {
+    const res = await readLocalEditJson({ path: path.join(root, "edit.openreel.json") }, opts());
+    expect(res).toMatchObject({ ok: true, text: '{"format":"openreel-edit"}', path: path.join(root, "edit.openreel.json") });
+  });
+  it("refuses .json outside the roots, non-json files and files over 5 MB", async () => {
+    expect((await readLocalEditJson({ path: path.join(outside, "edit.json") }, opts())).ok).toBe(false);
+    expect((await readLocalEditJson({ path: path.join(root, "sub", "clip.mp4") }, opts())).ok).toBe(false);
+    expect((await readLocalEditJson({ path: path.join(root, "big.json") }, opts())).ok).toBe(false);
+  });
+  it("media checks still refuse .json", async () => {
+    expect((await checkLocalMediaPath({ path: path.join(root, "edit.openreel.json") }, opts())).ok).toBe(false);
   });
 });
