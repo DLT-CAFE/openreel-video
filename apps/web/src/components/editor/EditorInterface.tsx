@@ -26,6 +26,7 @@ import { useKeyboardShortcuts } from "../../hooks/useKeyboardShortcuts";
 import { useEditorInitialization } from "../../hooks/useEditorInitialization";
 import { useCompactEditor } from "../../hooks/useCompactEditor";
 import "./editor-responsive.css";
+import "./shell/viewer-controls.css"; // DLT Cafe: adaptive viewer controls
 
 const ChatPanel = React.lazy(() =>
   import("./chat/ChatPanel").then((module) => ({ default: module.ChatPanel })),

@@ -1,0 +1,28 @@
+/* DLT Cafe: the viewer's control rows adapt to the viewer's own width
+   (container query, not window width): first tighten, then hide secondary
+   bits (project duration, button labels), then wrap. Nothing is clipped at
+   any viewer width; typical widths look unchanged. */
+[aria-label="Preview canvas"] { container-type: inline-size; container-name: viewer; }
+[data-preview-tools] { flex-wrap: wrap; justify-content: center; row-gap: 6px; }
+[data-preview-transport] { row-gap: 4px; }
+
+@container viewer (max-width: 640px) {
+  [data-preview-transport] { column-gap: 6px; padding-left: 8px; padding-right: 8px; }
+  [data-preview-playback] { gap: 8px; }
+  [data-preview-tools] { gap: 4px; }
+  [data-preview-tools] button { padding-left: 7px !important; padding-right: 7px !important; }
+  [data-preview-tools] button[class*="w-[34px]"] { width: 30px !important; height: 30px !important; }
+}
+
+@container viewer (max-width: 520px) {
+  /* hide the project duration next to the timecode */
+  [data-preview-timecode] [aria-label="Project duration"],
+  [data-preview-timecode] span[aria-hidden]:has(+ [aria-label="Project duration"]) { display: none; }
+  [data-preview-timecode] input { width: 92px !important; }
+  [data-preview-playback] { margin-left: auto; margin-right: 0; }
+}
+
+@container viewer (max-width: 400px) {
+  [data-preview-timecode] { flex-basis: 100%; justify-content: center; }
+  [data-preview-playback] { margin: 0 auto; }
+}
