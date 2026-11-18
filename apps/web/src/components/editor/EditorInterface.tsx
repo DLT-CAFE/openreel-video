@@ -7,7 +7,9 @@ import { EditorActionRail } from "./EditorActionRail";
 import { AssetsPanel } from "./AssetsPanel";
 import { Preview } from "./Preview";
 import { InspectorPanel } from "./InspectorPanel";
-import { ReviewDock } from "./review/ReviewDock"; // DLT Cafe
+import { CollabDock } from "./collab/CollabDock"; // DLT Cafe M3
+import { CollabLauncher } from "./collab/CollabLauncher"; // DLT Cafe M3
+import { installCollabBridges, setCollabChatBridgeEnabled } from "./collab/collab-store"; // DLT Cafe M3
 import { useReviewShortcuts } from "./review/use-review-shortcuts"; // DLT Cafe
 import { Timeline } from "./Timeline";
 import { KeyframeEditorPanel } from "./KeyframeEditorPanel";
@@ -202,6 +204,8 @@ export const EditorInterface: React.FC = () => {
 
   const chatVisible = panels.agentChat?.visible ?? false;
   useReviewShortcuts(); // DLT Cafe: N adds a review note
+  useEffect(() => installCollabBridges(), []); // DLT Cafe M3: chat + notes open the Collaborate panel
+  useEffect(() => setCollabChatBridgeEnabled(!compact), [compact]);
   useEffect(() => {
     if (chatVisible) {
       setHasOpenedChat(true);
@@ -366,7 +370,7 @@ export const EditorInterface: React.FC = () => {
     >
       <Toolbar />
 
-      <div className="editor-body flex-1 min-h-0 flex">
+      <div className="editor-body relative flex-1 min-h-0 flex">
         <div className="editor-rail" hidden={compact && compactPanel !== "media"}><EditorActionRail /></div>
         <div
           className={`editor-workspace flex-1 min-w-0 min-h-0 grid gap-0 bg-bg p-2.5 ${chatVisible && !compact ? "ai-workspace-grid" : ""}`}
@@ -399,12 +403,13 @@ export const EditorInterface: React.FC = () => {
         </div>
 
         <div
-          className="editor-stage bg-stage-bg min-w-0 min-h-0 overflow-hidden rounded-xl border border-border shadow-sm"
+          className="editor-stage relative bg-stage-bg min-w-0 min-h-0 overflow-hidden rounded-xl border border-border shadow-sm"
           style={{ gridArea: "stage" }}
         >
           <PanelErrorBoundary name="Stage">
             <Preview />
           </PanelErrorBoundary>
+          <CollabLauncher />{/* DLT Cafe M3 */}
         </div>
 
         {!chatVisible && <><div
@@ -525,7 +530,7 @@ export const EditorInterface: React.FC = () => {
           </div>
         </div>
       </div>
-      <ReviewDock compact={compact} />{/* DLT Cafe: full-height review dock */}
+      <CollabDock compact={compact} />{/* DLT Cafe M3: AI chat + review notes */}
       </div>
 
       {compact && (

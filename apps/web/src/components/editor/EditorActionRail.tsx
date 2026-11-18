@@ -29,7 +29,6 @@ import {
   startMoGraphTour,
   MOGRAPH_TOUR_KEY,
 } from "./tour";
-import { ReviewRailButton } from "./review/ReviewRailButton"; // DLT Cafe
 
 const RailButton: React.FC<{
   label: string;
@@ -132,13 +131,7 @@ export const EditorActionRail: React.FC = () => {
         onClick={() => togglePanel("audioMixer")}
         active={Boolean(panels.audioMixer?.visible)}
       />
-      <RailButton
-        label="AI Editor chat"
-        icon="bubble.left.and.text.bubble.right"
-        onClick={() => togglePanel("agentChat")}
-        active={Boolean(panels.agentChat?.visible)}
-      />
-      <ReviewRailButton />
+      {/* DLT Cafe M3: AI chat + review notes moved to the Collaborate panel */}
       <RailButton
         label="Project JSON / Comments"
         icon="curlybraces"

@@ -65,7 +65,6 @@ export const Toolbar: React.FC = () => {
     setIsExportOpen(false);
     useUIStore.getState().openModal("export");
   }, []);
-  const aiMode = useUIStore((s) => s.panels.agentChat?.visible ?? false);
   const [isCompressOpen, setIsCompressOpen] = useState(false);
   const importMedia = useProjectStore((state) => state.importMedia);
   const sourceMatch = useMemo(() => deriveSourceExportMatch(project), [project]);
@@ -388,10 +387,9 @@ export const Toolbar: React.FC = () => {
       data-editor-chrome={chrome.platform}
     >
 
-      <div role="group" aria-label="Editing mode" className="flex shrink-0 rounded-lg bg-bg-3 p-1 text-xs" style={chrome.dragRegion ? NO_DRAG_STYLE : undefined}>
-        <button type="button" aria-pressed={!aiMode} className={`rounded-md px-3 py-1.5 ${!aiMode ? "bg-bg-1 text-fg" : "text-fg-muted"}`} onClick={() => useUIStore.getState().setPanelVisible("agentChat", false)}>Manual</button>
-        <button type="button" aria-pressed={aiMode} className={`rounded-md px-3 py-1.5 ${aiMode ? "bg-accent-soft text-accent" : "text-fg-muted"}`} onClick={() => useUIStore.getState().setPanelVisible("agentChat", true)}>AI editing</button>
-      </div>
+      {/* DLT Cafe M3: the "Manual | AI editing" mode switch is gone; the AI chat and
+          review notes live in one Collaborate panel (floating "AI & notes" button). */}
+      <div className="w-[120px] shrink-0" aria-hidden />
 
       {/* ─── Center: project name ─────────────────────────────── */}
       <div className="flex flex-1 min-w-0 items-center justify-center gap-1.5">
