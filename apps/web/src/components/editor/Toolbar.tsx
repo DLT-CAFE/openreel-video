@@ -28,6 +28,7 @@ import { SettingsDialog } from "./settings/SettingsDialog";
 import { Icon } from "@/icons/Icon";
 import { DRAG_STYLE, NO_DRAG_STYLE, useEditorChrome } from "./shell/editor-chrome"; // DLT Cafe
 import { EditorActionRail } from "./EditorActionRail"; // DLT Cafe M2
+import { WorkspaceMenu } from "./shell/WorkspaceMenu"; // DLT Cafe M6
 import { useCompactEditor } from "../../hooks/useCompactEditor"; // DLT Cafe M2
 import { toast } from "../../stores/notification-store";
 import { useAnalytics, AnalyticsEvents } from "../../hooks/useAnalytics";
@@ -422,6 +423,7 @@ export const Toolbar: React.FC = () => {
 
       {/* ─── Right: export only ───────────────────────────────── */}
       <div className="flex items-center justify-end shrink-0" style={chrome.dragRegion ? NO_DRAG_STYLE : undefined}>
+        {!compact && <div className="mr-2"><WorkspaceMenu /></div>}{/* DLT Cafe M6 */}
         {/* Export (DLT Cafe: the desktop app swaps in its native export button) */}
         {chrome.exportSlot ? chrome.exportSlot : exportState.isExporting ? (
           <button

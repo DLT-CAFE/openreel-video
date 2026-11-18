@@ -34,8 +34,7 @@ const ChatPanel = React.lazy(() =>
 // top workspace (media | stage | inspector) gets the rest. The grid
 // from the mockup is `1fr var(--tl-height)` rows — by default
 // timeline is 58vh which leaves the top row with ~38–42vh of stage.
-const DEFAULT_TIMELINE_VH = 42;
-const PORTRAIT_TIMELINE_VH = 28; // DLT Cafe M5
+// DLT Cafe M6: default timeline heights (42vh landscape, 28vh portrait) live in shell/layout-store.
 const MIN_TIMELINE_VH = 22;
 const MAX_TIMELINE_VH = 70;
 // Compact mode: timeline takes most of the height, leaving a small preview.
@@ -200,18 +199,29 @@ export const EditorInterface: React.FC = () => {
   // ── Layout state (resizable columns and timeline band) ──────────
   const rootRef = useRef<HTMLDivElement>(null);
   const resizeRef = useRef<ResizeTarget | null>(null);
-  const [mediaWidth, setMediaWidth] = useState(() => window.innerWidth < 1600 ? MIN_MEDIA_W : DEFAULT_MEDIA_W);
-  const [inspectorWidth, setInspectorWidth] = useState(() => window.innerWidth < 1600 ? MIN_INSPECTOR_W : DEFAULT_INSPECTOR_W);
+  // DLT Cafe M6: panel sizes live in the (persisted) layout store so saved
+  // workspaces can restore them; null means "pick from the screen width".
+  const storedMediaW = useEditorLayoutStore((s) => s.mediaWidth);
+  const storedInspectorW = useEditorLayoutStore((s) => s.inspectorWidth);
+  const swapSides = useEditorLayoutStore((s) => s.swapSides);
+  const mediaWidth = storedMediaW ?? (window.innerWidth < 1600 ? MIN_MEDIA_W : DEFAULT_MEDIA_W);
+  const inspectorWidth = storedInspectorW ?? (window.innerWidth < 1600 ? MIN_INSPECTOR_W : DEFAULT_INSPECTOR_W);
+  const setMediaWidth = useCallback((v: number | ((w: number) => number)) => {
+    const s = useEditorLayoutStore.getState();
+    const cur = s.mediaWidth ?? (window.innerWidth < 1600 ? MIN_MEDIA_W : DEFAULT_MEDIA_W);
+    s.setLayout({ mediaWidth: Math.round(typeof v === "function" ? v(cur) : v) });
+  }, []);
+  const setInspectorWidth = useCallback((v: number) => useEditorLayoutStore.getState().setLayout({ inspectorWidth: Math.round(v) }), []);
   const [chatWidth, setChatWidth] = useState(DEFAULT_CHAT_W);
-  const [landscapeTimelineVh, setLandscapeTimelineVh] = useState(DEFAULT_TIMELINE_VH);
+  const landscapeTimelineVh = useEditorLayoutStore((s) => s.landscapeTimelineVh);
   // DLT Cafe M5: portrait (9:16, 4:5 …) projects get a tall stage: the timeline
   // starts shorter and keeps its own height, so the vertical frame fills the viewer.
   const portrait = useProjectStore((state) => state.project.settings.height > state.project.settings.width);
-  const [portraitTimelineVh, setPortraitTimelineVh] = useState(PORTRAIT_TIMELINE_VH);
+  const portraitTimelineVh = useEditorLayoutStore((s) => s.portraitTimelineVh);
   const timelineVh = portrait ? portraitTimelineVh : landscapeTimelineVh;
   const portraitRef = useRef(portrait);
   portraitRef.current = portrait;
-  const setTimelineVh = useCallback((vh: number) => (portraitRef.current ? setPortraitTimelineVh : setLandscapeTimelineVh)(vh), []);
+  const setTimelineVh = useCallback((vh: number) => useEditorLayoutStore.getState().setLayout(portraitRef.current ? { portraitTimelineVh: vh } : { landscapeTimelineVh: vh }), []);
 
   const chatVisible = panels.agentChat?.visible ?? false;
   useReviewShortcuts(); // DLT Cafe: N adds a review note
@@ -265,11 +275,12 @@ export const EditorInterface: React.FC = () => {
         useUIStore.getState().panels.agentChat?.visible ?? false;
       const chatOffset = chatOpen ? chatRef.current + RESIZE_HANDLE : 0;
 
+      const swapped = useEditorLayoutStore.getState().swapSides; // DLT Cafe M6
       if (target === "media") {
         const maxByStage =
           rect.width - (chatOpen ? 0 : inspectorRef.current) - chatOffset - MIN_STAGE_W;
         setMediaWidth(
-          clamp(e.clientX - rect.left, MIN_MEDIA_W, Math.min(MAX_MEDIA_W, maxByStage)),
+          clamp(swapped ? rect.right - e.clientX : e.clientX - rect.left, MIN_MEDIA_W, Math.min(MAX_MEDIA_W, maxByStage)),
         );
         return;
       }
@@ -278,7 +289,7 @@ export const EditorInterface: React.FC = () => {
           rect.width - mediaRef.current - chatOffset - MIN_STAGE_W;
         setInspectorWidth(
           clamp(
-            rect.right - chatOffset - e.clientX,
+            swapped ? e.clientX - rect.left : rect.right - chatOffset - e.clientX,
             MIN_INSPECTOR_W,
             Math.min(MAX_INSPECTOR_W, maxByStage),
           ),
@@ -372,6 +383,13 @@ export const EditorInterface: React.FC = () => {
         gridTemplateAreas:
           "'media mh stage ch chat' 'th th th th th' 'timeline timeline timeline timeline timeline'",
       }
+    : swapSides // DLT Cafe M6: Inspector left, media drawer right
+    ? {
+        gridTemplateColumns: `${inspectorWidth}px ${RESIZE_HANDLE}px 1fr ${mediaHandle}px ${mediaCol}px`,
+        gridTemplateRows: `1fr ${RESIZE_HANDLE}px ${effectiveTimelineVh}vh`,
+        gridTemplateAreas:
+          "'inspector ih stage mh media' 'th th th th th' 'timeline timeline timeline timeline timeline'",
+      }
     : {
         gridTemplateColumns: `${mediaCol}px ${mediaHandle}px 1fr ${RESIZE_HANDLE}px ${inspectorWidth}px`,
         gridTemplateRows: `1fr ${RESIZE_HANDLE}px ${effectiveTimelineVh}vh`,
@@ -432,9 +450,9 @@ export const EditorInterface: React.FC = () => {
               aria-label="Show media panel"
               title="Show media panel"
               onClick={() => setMediaCollapsed(false)}
-              className="absolute left-2 top-1/2 z-30 grid h-16 w-7 -translate-y-1/2 place-items-center rounded-lg border border-border-strong bg-bg-1 text-fg-2 shadow-md hover:bg-hover hover:text-fg"
+              className={`absolute ${swapSides ? "right-2" : "left-2"} top-1/2 z-30 grid h-16 w-7 -translate-y-1/2 place-items-center rounded-lg border border-border-strong bg-bg-1 text-fg-2 shadow-md hover:bg-hover hover:text-fg`}
             >
-              <ChevronsRight size={16} aria-hidden />
+              <ChevronsRight size={16} aria-hidden className={swapSides ? "rotate-180" : undefined} />
             </button>
           )}
         </div>

@@ -16,7 +16,7 @@ export function clampFloat(r: FloatRect, vw: number, vh: number): FloatRect {
 }
 
 export const CollabDock: React.FC<{ compact?: boolean; variant?: "web" | "desktop" }> = ({ compact = false }) => {
-  const { open, mode, float, setFloat, close } = useCollabStore();
+  const { open, mode, float, setFloat, close, side } = useCollabStore();
   const [width, setWidth] = useState(loadDockWidth);
   const drag = useRef<{ kind: "dock" | "move" | "resize"; sx: number; sy: number; start: FloatRect; w: number } | null>(null);
   const [live, setLive] = useState<FloatRect | null>(null);
@@ -29,7 +29,7 @@ export const CollabDock: React.FC<{ compact?: boolean; variant?: "web" | "deskto
       if (!d) return;
       const dx = e.clientX - d.sx, dy = e.clientY - d.sy;
       const { vw, vh } = viewport();
-      if (d.kind === "dock") setWidth(Math.min(REVIEW_DOCK_MAX_W, Math.max(REVIEW_DOCK_MIN_W, d.w - dx)));
+      if (d.kind === "dock") setWidth(Math.min(REVIEW_DOCK_MAX_W, Math.max(REVIEW_DOCK_MIN_W, useCollabStore.getState().side === "left" ? d.w + dx : d.w - dx)));
       else if (d.kind === "move") setLive(clampFloat({ ...d.start, x: d.start.x + dx, y: d.start.y + dy }, vw, vh));
       else setLive(clampFloat({ ...d.start, w: d.start.w + dx, h: d.start.h + dy }, vw, vh));
     };
@@ -93,7 +93,14 @@ export const CollabDock: React.FC<{ compact?: boolean; variant?: "web" | "deskto
   }
 
   return (
-    <aside aria-label="Collaborate panel" data-testid="collab-dock" data-mode="docked" className="relative flex h-full shrink-0 py-2.5 pr-2.5" style={{ width }}>
+    <aside
+      aria-label="Collaborate panel"
+      data-testid="collab-dock"
+      data-mode="docked"
+      data-side={side}
+      className={`relative flex h-full shrink-0 py-2.5 ${side === "left" ? "order-first flex-row-reverse pl-2.5" : "pr-2.5"}`}
+      style={{ width }}
+    >
       <div
         role="separator"
         aria-orientation="vertical"

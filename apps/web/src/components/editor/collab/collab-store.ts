@@ -8,6 +8,7 @@ import { useReviewUIStore } from "../review/review-ui-store";
 
 export type CollabTab = "chat" | "notes";
 export type CollabMode = "docked" | "floating";
+export type CollabSide = "left" | "right";
 
 export interface FloatRect { x: number; y: number; w: number; h: number }
 
@@ -15,6 +16,7 @@ interface CollabState {
   open: boolean;
   tab: CollabTab;
   mode: CollabMode;
+  side: CollabSide;
   float: FloatRect;
   openPanel: (tab?: CollabTab) => void;
   close: () => void;
@@ -22,12 +24,13 @@ interface CollabState {
   setTab: (tab: CollabTab) => void;
   setMode: (mode: CollabMode) => void;
   setFloat: (rect: FloatRect) => void;
+  setSide: (side: CollabSide) => void;
 }
 
 const KEY = "dltcafe-collab-panel";
 export const DEFAULT_FLOAT: FloatRect = { x: -1, y: 96, w: 380, h: 560 };
 
-function load(): Partial<Pick<CollabState, "tab" | "mode" | "float">> {
+function load(): Partial<Pick<CollabState, "tab" | "mode" | "float" | "side">> {
   try {
     const raw = localStorage.getItem(KEY);
     if (!raw) return {};
@@ -36,6 +39,7 @@ function load(): Partial<Pick<CollabState, "tab" | "mode" | "float">> {
     return {
       ...(v.tab === "chat" || v.tab === "notes" ? { tab: v.tab } : {}),
       ...(v.mode === "docked" || v.mode === "floating" ? { mode: v.mode } : {}),
+      ...(v.side === "left" || v.side === "right" ? { side: v.side } : {}),
       ...(f && [f.x, f.y, f.w, f.h].every((n) => typeof n === "number" && Number.isFinite(n)) ? { float: f } : {}),
     };
   } catch {
@@ -43,14 +47,15 @@ function load(): Partial<Pick<CollabState, "tab" | "mode" | "float">> {
   }
 }
 
-function save(s: Pick<CollabState, "tab" | "mode" | "float">): void {
-  try { localStorage.setItem(KEY, JSON.stringify({ tab: s.tab, mode: s.mode, float: s.float })); } catch { /* storage unavailable */ }
+function save(s: Pick<CollabState, "tab" | "mode" | "float" | "side">): void {
+  try { localStorage.setItem(KEY, JSON.stringify({ tab: s.tab, mode: s.mode, float: s.float, side: s.side })); } catch { /* storage unavailable */ }
 }
 
 export const useCollabStore = create<CollabState>((set, get) => ({
   open: false,
   tab: "chat",
   mode: "docked",
+  side: "right",
   float: DEFAULT_FLOAT,
   ...load(),
   openPanel: (tab) => set((s) => ({ open: true, tab: tab ?? s.tab })),
@@ -59,6 +64,7 @@ export const useCollabStore = create<CollabState>((set, get) => ({
   setTab: (tab) => { set({ tab }); save(get()); },
   setMode: (mode) => { set({ mode }); save(get()); },
   setFloat: (float) => { set({ float }); save(get()); },
+  setSide: (side) => { set({ side }); save(get()); },
 }));
 
 let bridged = false;
