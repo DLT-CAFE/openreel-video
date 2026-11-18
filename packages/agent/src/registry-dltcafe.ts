@@ -336,6 +336,43 @@ DLTCAFE_TOOLS.push({
   },
 });
 
+// Markers and subtitles have remove_* tools but no way to list their ids; the
+// creator pack's review scripts need them to replace a preview's markers.
+DLTCAFE_TOOLS.push(
+  {
+    name: "list_markers",
+    domain: "read",
+    title: "List timeline markers",
+    description: "Timeline markers of the open project: [{id, time, label, color}], sorted by time. Use an id with update_marker / remove_marker.",
+    inputSchema: obj({}),
+    readOnly: true,
+    destructive: false,
+    expensive: false,
+    handler: (_args, host) => {
+      host.requireOpenProject();
+      const markers = [...(host.getProject().timeline.markers ?? [])].sort((a, b) => a.time - b.time);
+      return ok(`${markers.length} marker(s)`, markers);
+    },
+  },
+  {
+    name: "list_subtitles",
+    domain: "read",
+    title: "List subtitles",
+    description: "Subtitles of the open project: [{id, startTime, endTime, text}], sorted by time. Use an id with update_subtitle / remove_subtitle.",
+    inputSchema: obj({}),
+    readOnly: true,
+    destructive: false,
+    expensive: false,
+    handler: (_args, host) => {
+      host.requireOpenProject();
+      const subs = [...(host.getProject().timeline.subtitles ?? [])]
+        .sort((a, b) => a.startTime - b.startTime)
+        .map((x) => ({ id: x.id, startTime: x.startTime, endTime: x.endTime, text: x.text }));
+      return ok(`${subs.length} subtitle(s)`, subs);
+    },
+  },
+);
+
 /** Longest wait per call; stays under the desktop bridge's 120 s per-call limit. */
 export const REVIEW_WAIT_MAX_SEC = 110;
 const REVIEW_WAIT_DEFAULT_SEC = 100;
