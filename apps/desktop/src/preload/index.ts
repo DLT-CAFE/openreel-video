@@ -96,6 +96,12 @@ contextBridge.exposeInMainWorld("openreel", {
     extractAudioWav: (args: unknown) => ipcRenderer.invoke(CHANNELS.mediaExtractAudioWav, args),
     probeAudioStreams: (args: unknown) => ipcRenderer.invoke(CHANNELS.mediaProbeAudioStreams, args),
     fetchUrl: (args: unknown) => ipcRenderer.invoke(CHANNELS.mediaFetchUrl, args),
+    // DLT Cafe: chunked local media reads, restricted to approved folders in main.
+    readLocalFile: {
+      open: (args: unknown) => ipcRenderer.invoke(CHANNELS.mediaLocalOpen, args),
+      read: (args: unknown) => ipcRenderer.invoke(CHANNELS.mediaLocalRead, args),
+      close: (args: unknown) => ipcRenderer.invoke(CHANNELS.mediaLocalClose, args),
+    },
   },
   rigging: {
     probeBackend: () => ipcRenderer.invoke(CHANNELS.riggingProbeBackend, undefined),

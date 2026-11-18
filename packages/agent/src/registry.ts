@@ -1,4 +1,5 @@
 import type { Action } from "@openreel/core/types/actions";
+import { DLTCAFE_TOOLS } from "./registry-dltcafe";
 import {
   DEFAULT_SHAPE_STYLE,
   SHAPE_TYPES,
@@ -32162,7 +32163,7 @@ const TOOLS: RegisteredTool[] = [
 ];
 
 // ---- Registry --------------------------------------------------------------
-const REGISTRY = new Map<string, RegisteredTool>(TOOLS.map((t) => [t.name, t]));
+const REGISTRY = new Map<string, RegisteredTool>([...TOOLS, ...DLTCAFE_TOOLS].map((t) => [t.name, t]));
 
 export function getTool(name: string): RegisteredTool | undefined {
   return REGISTRY.get(name);

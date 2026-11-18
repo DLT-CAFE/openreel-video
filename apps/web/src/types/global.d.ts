@@ -294,6 +294,21 @@ declare global {
           body: ArrayBuffer;
           error?: string;
         }>;
+        /** DLT Cafe: chunked reads of files in approved local folders (desktop only). */
+        readLocalFile?: {
+          open(args: { path: string; maxBytes?: number }): Promise<{
+            ok: boolean;
+            status: number;
+            statusText: string;
+            contentType: string;
+            error?: string;
+            name: string;
+            size: number;
+            handle: string;
+          }>;
+          read(args: { handle: string; offset: number; length: number }): Promise<ArrayBuffer>;
+          close(args: { handle: string }): Promise<void>;
+        };
       };
       rigging?: {
         probeBackend(): Promise<OpenReelRiggingBackendProbe>;

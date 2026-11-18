@@ -55,6 +55,7 @@ import {
 } from "../../motion/stores/motion-store";
 import { runMotionRenderQueue } from "../../motion/render-queue-runner";
 import { createMulticamHostBridge } from "./multicam-bridge";
+import { importLocalMediaFile } from "./dltcafe/local-media-import";
 
 const MIME_BY_EXT: Record<string, string> = {
   mp4: "video/mp4",
@@ -277,6 +278,15 @@ export class LiveEditorHost implements EditingHost {
       width: item?.metadata?.width,
       height: item?.metadata?.height,
     };
+  }
+
+  /** DLT Cafe: import a file from an approved local folder (desktop only). */
+  async importMediaFromPath(
+    filePath: string,
+    options?: { name?: string },
+  ): Promise<ImportedMediaRef> {
+    this.requireOpenProject();
+    return importLocalMediaFile(filePath, options);
   }
 
   async exportMotionScene(

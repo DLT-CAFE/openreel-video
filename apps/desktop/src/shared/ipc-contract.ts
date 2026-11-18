@@ -53,6 +53,17 @@ export const fetchUrlArgsSchema = z.object({
   url: z.string().url(),
   maxBytes: z.number().int().positive().optional(),
 });
+// DLT Cafe: local media import (see main/ipc/local-media.ts)
+export const localMediaOpenArgsSchema = z.object({
+  path: z.string().min(1).max(4096),
+  maxBytes: z.number().int().positive().optional(),
+});
+export const localMediaReadArgsSchema = z.object({
+  handle: z.string().uuid(),
+  offset: z.number().int().nonnegative(),
+  length: z.number().int().positive(),
+});
+export const localMediaCloseArgsSchema = z.object({ handle: z.string().uuid() });
 
 export const riggingBackendModeSchema = z.enum(["configured", "bundled", "system"]);
 export type RiggingBackendMode = z.infer<typeof riggingBackendModeSchema>;

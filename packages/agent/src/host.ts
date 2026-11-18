@@ -254,6 +254,8 @@ export interface EditingHost {
   listProjects?(): Promise<readonly ProjectRef[]>;
   saveProject?(): Promise<ProjectRef>;
   importMediaFromUrl?(url: string, options?: { name?: string }): Promise<ImportedMediaRef>;
+  /** DLT Cafe: import a file from an approved local folder (desktop host only). */
+  importMediaFromPath?(path: string, options?: { name?: string }): Promise<ImportedMediaRef>;
   /**
    * Render a motion composition to a finished video file (mp4 / transparent
    * WebM / ProRes 4444 MOV). Optional because it needs the renderer-side motion

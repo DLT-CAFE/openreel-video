@@ -31,6 +31,10 @@ export const CHANNELS = {
   mediaExtractAudioWav: "openreel:media:extractAudioWav",
   mediaProbeAudioStreams: "openreel:media:probeAudioStreams",
   mediaFetchUrl: "openreel:media:fetchUrl",
+  // DLT Cafe: local media import (see main/ipc/local-media.ts)
+  mediaLocalOpen: "openreel:media:localOpen",
+  mediaLocalRead: "openreel:media:localRead",
+  mediaLocalClose: "openreel:media:localClose",
   riggingProbeBackend: "openreel:rigging:probeBackend",
   riggingRigHumanoidModel: "openreel:rigging:rigHumanoidModel",
   cloudFetch: "openreel:cloud:fetch",
