@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { Plug, Eye, EyeOff, Copy, RefreshCw, Wifi } from "@/icons/lucide-compat";
+import { Eye, EyeOff, Copy, RefreshCw, Wifi } from "@/icons/lucide-compat";
 import { ToolcraftSwitchControl } from "@openreel/ui";
 import { ToolcraftButton as Button } from "@openreel/ui";
 import { ToolcraftIconButton as IconButton } from "@openreel/ui";
@@ -7,6 +7,7 @@ import { ToolcraftText as Text } from "@openreel/ui";
 import { useSettingsStore } from "../../../stores/settings-store";
 import { toast } from "../../../stores/notification-store";
 import type { OpenReelMcpStatus } from "../../../types/global";
+import { McpWebSection } from "./McpWebSection"; // DLT Cafe
 
 const isDesktop = (): boolean =>
   typeof window !== "undefined" && window.openreel?.platform === "desktop";
@@ -100,21 +101,8 @@ export const McpPanel: React.FC = () => {
     }
   }, []);
 
-  if (!isDesktop()) {
-    return (
-      <div className="flex flex-col items-center justify-center py-16 text-center">
-        <Plug size={28} className="mb-3 text-text-muted" />
-        <Text type="body" color="primary" className="text-sm font-medium">
-          Desktop only
-        </Text>
-        <Text type="supporting" color="secondary" className="mt-1 max-w-sm text-xs">
-          The MCP server runs inside the OpenReel desktop app, letting external AI
-          clients (Claude Desktop, Cursor, Cline) edit your project. Open OpenReel
-          on desktop to configure it.
-        </Text>
-      </div>
-    );
-  }
+  // DLT Cafe: the browser pairs with the local openreel-mcp bridge instead.
+  if (!isDesktop()) return <McpWebSection />;
 
   const tokenDisplay = status?.token
     ? revealToken

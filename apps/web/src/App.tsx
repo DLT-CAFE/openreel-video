@@ -1,4 +1,5 @@
 import { useEffect, useCallback, useRef, useState, lazy, Suspense } from "react";
+import { installWebMcpBridge } from "./services/dltcafe/mcp-web-bridge"; // DLT Cafe
 import { ToastContainer } from "./components/Toast";
 import { MobileBlocker } from "./components/MobileBlocker";
 import { WelcomeScreen } from "./components/welcome";
@@ -61,6 +62,9 @@ function App() {
   useEffect(() => {
     if (activeModal === "scriptView") setHasOpenedScriptView(true);
   }, [activeModal]);
+
+  // DLT Cafe: serve MCP tools to Claude through the local openreel-mcp bridge once paired.
+  useEffect(() => installWebMcpBridge(), []);
 
   useEffect(() => {
     if (hasHandledInitialRoute.current || isChecking || showDialog || isRecovering) return;

@@ -1,0 +1,24 @@
+{
+  "name": "@openreel/mcp-bridge",
+  "version": "0.1.0",
+  "private": true,
+  "description": "DLT Cafe: local MCP bridge. Claude talks stdio MCP to openreel-mcp, which forwards to the OpenReel desktop app if it is running, otherwise to a paired OpenReel browser tab over a loopback WebSocket.",
+  "type": "commonjs",
+  "bin": {
+    "openreel-mcp": "dist/cli.js"
+  },
+  "scripts": {
+    "build": "tsup",
+    "test": "vitest",
+    "test:run": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.0",
+    "@types/ws": "^8.5.12",
+    "tsup": "^8.0.0",
+    "typescript": "^5.4.5",
+    "vitest": "^1.6.0",
+    "ws": "^8.18.0"
+  }
+}

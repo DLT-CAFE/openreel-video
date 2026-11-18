@@ -634,6 +634,27 @@ importers:
         specifier: ^1.6.0
         version: 1.6.1(@types/node@20.19.41)(@vitest/ui@1.6.1)(jsdom@24.1.3)
 
+  packages/mcp-bridge:
+    devDependencies:
+      '@types/node':
+        specifier: ^20.14.0
+        version: 20.19.41
+      '@types/ws':
+        specifier: ^8.5.12
+        version: 8.18.2
+      tsup:
+        specifier: ^8.0.0
+        version: 8.5.1(jiti@2.7.0)(postcss@8.5.6)(typescript@5.9.3)(yaml@2.9.0)
+      typescript:
+        specifier: ^5.4.5
+        version: 5.9.3
+      vitest:
+        specifier: ^1.6.0
+        version: 1.6.1(@types/node@20.19.41)(@vitest/ui@1.6.1)(jsdom@24.1.3)
+      ws:
+        specifier: ^8.18.0
+        version: 8.18.3
+
   packages/review:
     dependencies:
       '@openreel/core':
@@ -2908,6 +2929,9 @@ packages:
 
   '@types/webxr@0.5.24':
     resolution: {integrity: sha512-h8fgEd/DpoS9CBrjEQXR+dIDraopAEfu4wYVNY2tEPwk60stPWhvZMf4Foo5FakuQ7HFZoa8WceaWFervK2Ovg==}
+
+  '@types/ws@8.18.2':
+    resolution: {integrity: sha512-67MQl+fpWKVTT1NYdnmo3U4sc/xPo/zQBncVnI74qmQa0z/b+1g6iYqNmGCPbxO+zz2aklb08a0oHfegiVd0/w==}
 
   '@types/yauzl@2.10.3':
     resolution: {integrity: sha512-oJoftv0LSuaDZE3Le4DbKX+KS9G36NzOeSap90UIK0yMA/NhKJhqlSGtNDORNRaIbQfzjXDrQa0ytJ6mNRGz/Q==}
@@ -7837,6 +7861,10 @@ snapshots:
     optional: true
 
   '@types/webxr@0.5.24': {}
+
+  '@types/ws@8.18.2':
+    dependencies:
+      '@types/node': 20.19.41
 
   '@types/yauzl@2.10.3':
     dependencies:

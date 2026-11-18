@@ -7,7 +7,11 @@ export default defineConfig({
     "aurora-host/index": "src/aurora-host/index.ts",
     // Standalone stdio->HTTP MCP shim spawned by external clients (Claude
     // Desktop / Cursor / Cline). Electron-free so it runs under plain node.
-    "mcp-shim/index": "src/mcp-shim/index.ts",
+    // DLT Cafe: the shim is now the openreel-mcp bridge (packages/mcp-bridge). Same
+    // path and same desktop behaviour, plus a fallback to a paired browser tab when
+    // the desktop app isn't running. src/mcp-shim/index.ts stays as the upstream
+    // reference (and its tests), but is no longer built.
+    "mcp-shim/index": "../../packages/mcp-bridge/src/cli.ts",
   },
   format: ["cjs"],
   platform: "node",
@@ -18,7 +22,7 @@ export default defineConfig({
   // fully copied into the asar, which dropped electron-updater's deps and
   // crashed the app on launch ("Cannot find module 'fs-extra'").
   external: ["electron"],
-  noExternal: ["electron-updater", "zod"],
+  noExternal: ["electron-updater", "zod", "ws"],
   clean: true,
   sourcemap: true,
 });

@@ -9,16 +9,12 @@ import { ApiKeysPanel } from "./ApiKeysPanel";
 import { McpPanel } from "./McpPanel";
 import { AISettingsPanel } from "./AISettingsPanel";
 
-const isDesktop =
-  typeof window !== "undefined" && window.openreel?.platform === "desktop";
-
 const TABS: readonly { id: SettingsTab; label: string; icon: typeof Settings }[] = [
   { id: "general", label: "General", icon: Settings },
   { id: "ai-editor", label: "AI Editor", icon: Bot },
   { id: "api-keys", label: "API Keys", icon: Key },
-  ...(isDesktop
-    ? [{ id: "mcp" as const, label: "MCP", icon: Plug }]
-    : []),
+  // DLT Cafe: MCP works in the browser too (via the local openreel-mcp bridge).
+  { id: "mcp" as const, label: "MCP", icon: Plug },
 ];
 
 export const SettingsDialog: React.FC = () => {
