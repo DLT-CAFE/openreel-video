@@ -176,10 +176,10 @@ export function DesktopExportButton(): JSX.Element {
         label="Export"
         variant="primary"
         size="sm"
-        icon={<Icon name="square.and.arrow.up" size={15} ariaHidden />}
+        icon={<Icon name="square.and.arrow.up" size={13} ariaHidden />}
         style={NO_DRAG}
         onClick={() => setIsDialogOpen(true)}
-        className="mr-2"
+        className="mr-2 h-7 px-2.5 text-[12px]" /* DLT Cafe: slim top-bar button */
       />
 
       <ExportDialog

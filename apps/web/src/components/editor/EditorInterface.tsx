@@ -443,7 +443,6 @@ export const EditorInterface: React.FC = () => {
           <PanelErrorBoundary name="Stage">
             <Preview />
           </PanelErrorBoundary>
-          <CollabLauncher />{/* DLT Cafe M3 */}
           {!compact && mediaCollapsed && (
             <button
               type="button"
@@ -576,6 +575,7 @@ export const EditorInterface: React.FC = () => {
         </div>
       </div>
       <CollabDock compact={compact} />{/* DLT Cafe M3: AI chat + review notes */}
+      <CollabLauncher />{/* DLT Cafe M3: bottom-right of the window */}
       </div>
 
       {compact && (

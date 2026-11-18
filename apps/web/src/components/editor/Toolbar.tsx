@@ -386,7 +386,7 @@ export const Toolbar: React.FC = () => {
 
   return (
     <header
-      className="h-[60px] flex items-center gap-2 px-2 sm:gap-[18px] sm:px-[18px] bg-bg-1 border-b border-border shrink-0 z-30 relative"
+      className="h-10 flex items-center gap-2 px-2 sm:gap-3 sm:px-3 bg-bg-1 border-b border-border shrink-0 z-30 relative"
       style={chrome.dragRegion ? { ...DRAG_STYLE, paddingLeft: chrome.leadingInset || undefined } : undefined}
       data-editor-chrome={chrome.platform}
     >
@@ -429,7 +429,7 @@ export const Toolbar: React.FC = () => {
           <button
             type="button"
             onClick={handleCancelExport}
-            className="flex items-center gap-1.5 rounded-[8px] bg-bg-3 px-[18px] py-[9px] text-[13px] font-semibold text-fg-2"
+            className="flex items-center gap-1.5 rounded-[8px] bg-bg-3 h-7 px-3 text-[12px] font-semibold text-fg-2"
           >
             <Icon name="square.and.arrow.up" size={13} ariaHidden />
             {`${Math.round(exportState.progress)}%`}
@@ -439,7 +439,7 @@ export const Toolbar: React.FC = () => {
           <button
             type="button"
             onClick={resetError}
-            className="flex max-w-[180px] items-center gap-1.5 truncate rounded-[8px] bg-destructive px-[18px] py-[9px] text-[13px] font-semibold text-destructive-foreground"
+            className="flex max-w-[180px] items-center gap-1.5 truncate rounded-[8px] bg-destructive h-7 px-3 text-[12px] font-semibold text-destructive-foreground"
           >
             <span className="truncate">{exportState.error}</span>
             <Icon name="xmark" size={11} ariaHidden />
@@ -448,7 +448,7 @@ export const Toolbar: React.FC = () => {
           <button
             type="button"
             disabled
-            className="flex items-center gap-1.5 rounded-[8px] bg-bg-3 px-[18px] py-[9px] text-[13px] font-semibold text-fg-2"
+            className="flex items-center gap-1.5 rounded-[8px] bg-bg-3 h-7 px-3 text-[12px] font-semibold text-fg-2"
           >
             <Icon name="checkmark" size={13} ariaHidden />
             Saved!
@@ -460,7 +460,7 @@ export const Toolbar: React.FC = () => {
               onClick={openExportDialog}
               disabled={!hasTimelineContent}
               title={hasTimelineContent ? "Choose export settings" : "Add media or text to the timeline to export"}
-              className="rounded-l-[8px] rounded-r-none bg-accent px-[18px] py-[9px] text-[13px] font-semibold text-accent-fg disabled:opacity-50 disabled:cursor-not-allowed"
+              className="rounded-l-[8px] rounded-r-none bg-accent h-7 px-3 text-[12px] font-semibold text-accent-fg disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Export
             </button>
@@ -479,7 +479,7 @@ export const Toolbar: React.FC = () => {
                     height="11"
                     viewBox="0 0 24 24"
                     fill="none"
-                    stroke="#fff"
+                    stroke="var(--accent-fg)"
                     strokeWidth="2.4"
                     aria-hidden
                   >
@@ -491,8 +491,8 @@ export const Toolbar: React.FC = () => {
                 style: {
                   background: "var(--accent)",
                   width: "auto",
-                  height: "auto",
-                  padding: "9px 8px",
+                  height: "28px",
+                  padding: "0 6px",
                   borderRadius: "0 8px 8px 0",
                 },
               }}

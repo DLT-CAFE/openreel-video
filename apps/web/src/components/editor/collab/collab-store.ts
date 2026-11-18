@@ -18,6 +18,9 @@ interface CollabState {
   mode: CollabMode;
   side: CollabSide;
   float: FloatRect;
+  /** Assistant chat replies already seen (for the launcher's unread dot). */
+  chatSeen: number;
+  markChatSeen: (count: number) => void;
   openPanel: (tab?: CollabTab) => void;
   close: () => void;
   toggle: () => void;
@@ -57,6 +60,8 @@ export const useCollabStore = create<CollabState>((set, get) => ({
   mode: "docked",
   side: "right",
   float: DEFAULT_FLOAT,
+  chatSeen: 0,
+  markChatSeen: (chatSeen) => { if (get().chatSeen !== chatSeen) set({ chatSeen }); },
   ...load(),
   openPanel: (tab) => set((s) => ({ open: true, tab: tab ?? s.tab })),
   close: () => set({ open: false }),

@@ -60,13 +60,13 @@ export const WorkspaceMenu: React.FC = () => {
         aria-expanded={open}
         aria-label={`Workspace${active ? `: ${active.name}` : ""}`}
         onClick={() => setOpen((v) => !v)}
-        className="flex h-9 items-center gap-1.5 rounded-lg px-2.5 text-[13px] font-medium text-fg-2 hover:bg-hover hover:text-fg"
+        className="flex h-8 items-center gap-1.5 rounded-lg px-2 text-[13px] font-medium text-fg-2 hover:bg-hover hover:text-fg"
       >
         <LayoutDashboard size={16} aria-hidden />
         <span className="hidden max-w-[120px] truncate lg:inline">{active?.name ?? "Workspace"}</span>
       </button>
       {open && (
-        <div role="menu" aria-label="Workspaces" className="absolute right-0 top-11 z-50 w-72 rounded-xl border border-border-strong bg-bg-1 p-1.5 shadow-2xl">
+        <div role="menu" aria-label="Workspaces" className="absolute right-0 top-10 z-50 w-72 rounded-xl border border-border-strong bg-bg-1 p-1.5 shadow-2xl">
           <div className="px-2.5 pb-1 pt-1.5 text-[11px] font-semibold uppercase tracking-wide text-fg-muted">Workspaces</div>
           {all.map((ws) => (
             <div key={ws.id} className="group flex items-center">

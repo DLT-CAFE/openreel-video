@@ -1,11 +1,13 @@
 // DLT Cafe M3: the Collaborate panel body: one header (Chat | Notes, dock/float,
 // close) over the existing AI chat and the review notes.
-import React, { Suspense, lazy, useMemo } from "react";
+import React, { Suspense, lazy, useEffect, useMemo } from "react";
 import { MessageSquareText, PanelRightClose, PictureInPicture2, Sparkles, X } from "lucide-react";
 import { getReview } from "@openreel/review";
 import { useProjectStore } from "../../../stores/project-store";
 import { ReviewPanel } from "../review/ReviewPanel";
 import { useCollabStore } from "./collab-store";
+import { useChatStore } from "../../../stores/chat-store";
+import { assistantReplyCount } from "./CollabLauncher";
 
 const ChatPanel = lazy(() => import("../chat/ChatPanel").then((m) => ({ default: m.ChatPanel })));
 
@@ -16,6 +18,10 @@ export const CollabPanel: React.FC<{ onHeaderPointerDown?: (e: React.PointerEven
   const { tab, mode, setTab, setMode, close } = useCollabStore();
   const review = useProjectStore((s) => s.project?.review);
   const openNotes = useMemo(() => getReview({ review }).notes.filter((n) => n.status === "open").length, [review]);
+  const replies = useChatStore((s) => assistantReplyCount(s.messages));
+  const markChatSeen = useCollabStore((s) => s.markChatSeen);
+  // Seeing the chat tab clears the launcher's unread dot.
+  useEffect(() => { if (tab === "chat") markChatSeen(replies); }, [tab, replies, markChatSeen]);
 
   return (
     <section aria-label="Collaborate" className="flex h-full min-h-0 flex-col bg-bg-1 text-[13px]">
@@ -25,7 +31,7 @@ export const CollabPanel: React.FC<{ onHeaderPointerDown?: (e: React.PointerEven
       >
         <div role="tablist" aria-label="Collaborate" className="flex rounded-lg bg-bg-2 p-1" onPointerDown={(e) => e.stopPropagation()}>
           {([
-            ["chat", "AI chat", <Sparkles key="i" size={14} aria-hidden />],
+            ["chat", "Chat", <Sparkles key="i" size={14} aria-hidden />],
             ["notes", "Notes", <MessageSquareText key="i" size={14} aria-hidden />],
           ] as const).map(([id, label, icon]) => (
             <button
@@ -59,6 +65,11 @@ export const CollabPanel: React.FC<{ onHeaderPointerDown?: (e: React.PointerEven
           <X size={16} aria-hidden />
         </button>
       </header>
+      <p className="shrink-0 border-b border-border px-3 py-1.5 text-[12px] text-fg-3" data-testid="collab-purpose">
+        {tab === "chat"
+          ? "Plan & brainstorm with the AI: ideas, project setup, questions."
+          : "Edit changes: pin notes to the timeline, then send them to Claude."}
+      </p>
       <div className="min-h-0 flex-1" role="tabpanel">
         {tab === "chat" ? (
           <Suspense fallback={<div className="grid h-full place-items-center text-fg-muted">Loading AI chat…</div>}>

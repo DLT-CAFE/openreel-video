@@ -110,3 +110,25 @@ describe("Collaborate panel", () => {
     expect(clampFloat({ x: 5000, y: -50, w: 100, h: 5000 }, 1440, 900)).toEqual({ x: 1112, y: 8, w: 320, h: 884 });
   });
 });
+
+describe("Collab launcher indicators", () => {
+  it("shows a notes count and a separate chat dot for thinking / unread replies", async () => {
+    const { useChatStore } = await import("../../../stores/chat-store");
+    useChatStore.setState({ status: "running", messages: [] });
+    useCollabStore.setState({ chatSeen: 0 });
+    const { addNote } = await import("@openreel/review");
+    const review = addNote(getReview({}), { t: 1, text: "x" }).state;
+    const { project } = useProjectStore.getState();
+    useProjectStore.setState({ project: { ...project, review } });
+    const view = render(<CollabLauncher />);
+    const btn = view.getByTestId("collab-launcher");
+    expect(btn.getAttribute("data-chat-state")).toBe("thinking");
+    expect(view.getByTestId("collab-notes-badge").textContent).toBe("1");
+    expect(btn.getAttribute("aria-label")).toMatch(/1 open note · AI is working/);
+    act(() => { useChatStore.setState({ status: "idle", messages: [{ id: "a", role: "assistant", text: "Here's a plan", toolCalls: [] }] as never }); });
+    expect(btn.getAttribute("data-chat-state")).toBe("unread");
+    expect(view.getByTestId("collab-chat-dot")).toBeTruthy();
+    fireEvent.click(btn); // opens on the chat tab
+    expect(useCollabStore.getState()).toMatchObject({ open: true, tab: "chat" });
+  });
+});
