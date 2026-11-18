@@ -6,7 +6,7 @@ import { getPlaybackBridge } from "../../../bridges/playback-bridge";
 import { formatReviewTime, useReviewUIStore } from "./review-ui-store";
 
 export const ReviewNotePins: React.FC<{ pixelsPerSecond: number; scrollX: number }> = ({ pixelsPerSecond, scrollX }) => {
-  const review = useProjectStore((s) => s.project.review);
+  const review = useProjectStore((s) => s.project?.review);
   const notes = useMemo(() => getReview({ review }).notes, [review]);
   const focused = useReviewUIStore((s) => s.focusedNoteId);
   const focusNote = useReviewUIStore((s) => s.focusNote);

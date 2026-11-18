@@ -270,6 +270,11 @@ export interface EditingHost {
     update: (review: import("@openreel/review").ReviewState, project: Project) => import("@openreel/review").ReviewState,
   ): import("@openreel/review").ReviewState;
   /**
+   * DLT Cafe: resolve with the first Send/Approve after `since` (see
+   * reviewEventSince), or null after timeoutMs. Must not hold the host lock.
+   */
+  waitForReviewEvent?(since: string | undefined, timeoutMs: number): Promise<import("@openreel/review").ReviewEvent | null>;
+  /**
    * Render a motion composition to a finished video file (mp4 / transparent
    * WebM / ProRes 4444 MOV). Optional because it needs the renderer-side motion
    * export pipeline that only the live/desktop web host provides — headless

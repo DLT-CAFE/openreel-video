@@ -57,7 +57,7 @@ import { runMotionRenderQueue } from "../../motion/render-queue-runner";
 import { createMulticamHostBridge } from "./multicam-bridge";
 import { importLocalMediaFile } from "./dltcafe/local-media-import";
 import { importPortableEditFromPath } from "./dltcafe/portable-import";
-import type { ReviewState } from "@openreel/review";
+import { getReview, reviewEventSince, type ReviewEvent, type ReviewState } from "@openreel/review";
 
 const MIME_BY_EXT: Record<string, string> = {
   mp4: "video/mp4",
@@ -297,6 +297,30 @@ export class LiveEditorHost implements EditingHost {
   ): ReviewState {
     this.requireOpenProject();
     return useProjectStore.getState().updateReview(update);
+  }
+
+  /** DLT Cafe: wait for the person's Send/Approve in the Review panel (no host lock held). */
+  waitForReviewEvent(since: string | undefined, timeoutMs: number): Promise<ReviewEvent | null> {
+    return new Promise((resolve) => {
+      const check = () => reviewEventSince(getReview(useProjectStore.getState().project), since);
+      const first = check();
+      if (first) return resolve(first);
+      let unsubscribe: () => void = () => {};
+      const timer = setTimeout(() => {
+        unsubscribe();
+        resolve(null);
+      }, timeoutMs);
+      unsubscribe = useProjectStore.subscribe(
+        (state) => state.project.review,
+        () => {
+          const event = check();
+          if (!event) return;
+          clearTimeout(timer);
+          unsubscribe();
+          resolve(event);
+        },
+      );
+    });
   }
 
   /** DLT Cafe: load an openreel-edit JSON from an approved folder, relinking media by name + size. */

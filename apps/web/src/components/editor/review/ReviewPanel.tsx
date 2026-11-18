@@ -48,7 +48,9 @@ export const ReviewPanel: React.FC<{ onClose?: () => void }> = ({ onClose }) => 
   const project = useProjectStore((s) => s.project);
   const hasOpenProject = useProjectStore((s) => s.hasOpenProject);
   const playhead = useTimelineStore((s) => s.playheadPosition);
-  const { focusedNoteId, focusNote } = useReviewUIStore();
+  const { focusedNoteId, focusNote, pendingT, composeToken, clearPending } = useReviewUIStore();
+  const composerRef = useRef<HTMLTextAreaElement>(null);
+  const noteT = pendingT ?? playhead;
   const review = useMemo(() => getReview(project), [project]);
   const summary = useMemo(() => summarize(review), [review]);
   const [filter, setFilter] = useState<Filter>("open");
@@ -62,7 +64,12 @@ export const ReviewPanel: React.FC<{ onClose?: () => void }> = ({ onClose }) => 
     return () => clearInterval(id);
   }, []);
 
-  const anchorHere = useMemo(() => clipAtTime(project, playhead), [project, playhead]);
+  const anchorHere = useMemo(() => clipAtTime(project, noteT), [project, noteT]);
+
+  // N shortcut: focus the composer with the time frozen at the key press.
+  useEffect(() => {
+    if (composeToken > 0) composerRef.current?.focus();
+  }, [composeToken]);
   const notes = useMemo(
     () => sortedNotes(review.notes).filter((n) => filter === "all" || n.status === filter),
     [review.notes, filter],
@@ -79,11 +86,14 @@ export const ReviewPanel: React.FC<{ onClose?: () => void }> = ({ onClose }) => 
   const addNote = () =>
     run(() => {
       const note = useProjectStore.getState().addReviewNote({
-        t: playhead,
+        t: noteT,
         text: draft,
         ...(anchorHere ? { clipId: anchorHere.clipId } : {}),
       });
       setDraft("");
+      clearPending();
+      // Hand the keyboard back to the editor (space to play, N for the next note).
+      composerRef.current?.blur();
       if (filter === "done") setFilter("open");
       focusNote(note.id);
     });
@@ -110,21 +120,31 @@ export const ReviewPanel: React.FC<{ onClose?: () => void }> = ({ onClose }) => 
 
       <div className="space-y-1.5 border-b border-border px-3 py-2.5">
         <div className="text-[11px] text-fg-2">
-          Note at <button type="button" className="font-mono text-accent hover:underline" onClick={() => seek(playhead)}>{formatReviewTime(playhead)}</button>
+          Note at <button type="button" className="font-mono text-accent hover:underline" onClick={() => seek(noteT)}>{formatReviewTime(noteT)}</button>
+          {pendingT !== null && (
+            <button type="button" className="ml-1 text-[10px] text-fg-muted hover:text-fg" onClick={clearPending} title="Follow the playhead again">
+              (pinned · follow playhead)
+            </button>
+          )}
           {anchorHere?.mediaName ? <> on <span className="text-fg">{anchorHere.mediaName}</span></> : null}
         </div>
         <textarea
+          ref={composerRef}
           aria-label="New review note"
           rows={2}
           className={`${input} min-h-[2.75rem]`}
           value={draft}
-          placeholder="What should change here? (⌘↵ to add)"
+          placeholder="What should change here? (⌘↵ to add · N for a new note)"
           onChange={(e) => setDraft(e.target.value)}
           onKeyDown={(e) => {
             e.stopPropagation(); // keep editor shortcuts (space, J/K/L, S...) out of the text box
             if (e.key === "Enter" && (e.metaKey || e.ctrlKey) && draft.trim()) {
               e.preventDefault();
               addNote();
+            }
+            if (e.key === "Escape") {
+              clearPending();
+              e.currentTarget.blur();
             }
           }}
         />

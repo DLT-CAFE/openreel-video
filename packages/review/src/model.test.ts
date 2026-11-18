@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import {
   EMPTY_REVIEW, addNote, approve, deleteNote, editNote, normalizeReview, replyToNote, reopenReview,
-  sendNotesToClaude, setNoteStatus, sortedNotes, summarize, markClaudeSeen, ReviewError, type ReviewClock,
+  sendNotesToClaude, setNoteStatus, sortedNotes, summarize, markClaudeSeen, ReviewError, reviewEventSince, type ReviewClock,
 } from "./model";
 
 function clock(): ReviewClock {
@@ -99,5 +99,21 @@ describe("review model", () => {
     expect(s.notes[0].replies).toHaveLength(1);
     expect(s.notes[1]).toMatchObject({ author: "user", status: "open" });
     expect(s.notes[1].t1).toBeUndefined();
+  });
+});
+
+describe("reviewEventSince", () => {
+  it("reports an unseen Send, then nothing after Claude reads, then Approve", () => {
+    const c = clock();
+    let { state } = addNote(EMPTY_REVIEW, { t: 1, text: "x" }, c);
+    expect(reviewEventSince(state)).toBeNull();
+    state = sendNotesToClaude(state, c);
+    const sent = reviewEventSince(state);
+    expect(sent?.event).toBe("send");
+    expect(reviewEventSince(state, sent!.at)).toBeNull();
+    state = markClaudeSeen(state, c);
+    expect(reviewEventSince(state)).toBeNull();
+    state = approve(state, c);
+    expect(reviewEventSince(state, sent!.at)?.event).toBe("approve");
   });
 });

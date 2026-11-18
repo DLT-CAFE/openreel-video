@@ -8,6 +8,7 @@ import {
 } from "@openreel/agent";
 import type { MotionComposition } from "@openreel/core";
 import { getLiveEditorHost, runExclusive } from "./host-singleton";
+import { DLTCAFE_UNLOCKED_TOOLS } from "@openreel/agent/registry-dltcafe"; // DLT Cafe
 import { useSettingsStore } from "../../stores/settings-store";
 import { useMotionStore } from "../../motion/stores/motion-store";
 import { useUIStore } from "../../stores/ui-store";
@@ -180,9 +181,12 @@ export async function handleMcpBridgeRequest(
       }
 
       const args = req.args ?? {};
-      const result = await runExclusive(() =>
-        Promise.resolve(executeTool(name, args, getLiveEditorHost())),
-      );
+      // DLT Cafe: waiting tools (wait_for_review_send) run without the host lock.
+      const result = DLTCAFE_UNLOCKED_TOOLS.has(name)
+        ? await executeTool(name, args, getLiveEditorHost())
+        : await runExclusive(() =>
+            Promise.resolve(executeTool(name, args, getLiveEditorHost())),
+          );
       followMcpMotionResult(name, args, result);
       return { ok: true, result };
     }

@@ -311,3 +311,29 @@ export function normalizeReview(raw: unknown): ReviewState {
     ...(isStr(raw.claudeSeenAt) ? { claudeSeenAt: raw.claudeSeenAt } : {}),
   };
 }
+
+export type ReviewEventKind = "send" | "approve";
+
+export interface ReviewEvent {
+  readonly event: ReviewEventKind;
+  /** ISO time of the event; pass it back as `since` to wait for the next one. */
+  readonly at: string;
+}
+
+/**
+ * The latest Send/Approve after `since` (ISO). Without `since`, anything Claude
+ * hasn't seen yet counts (claudeSeenAt), so a Send made before Claude started
+ * waiting is not missed.
+ */
+export function reviewEventSince(state: ReviewState, since?: string): ReviewEvent | null {
+  const after = since ?? state.claudeSeenAt ?? "";
+  const events: ReviewEvent[] = [];
+  if (state.sentAt && state.sentAt > after && state.approval.status === "changes_requested") {
+    events.push({ event: "send", at: state.sentAt });
+  }
+  if (state.approval.status === "approved" && state.approval.at && state.approval.at > after) {
+    events.push({ event: "approve", at: state.approval.at });
+  }
+  events.sort((a, b) => b.at.localeCompare(a.at));
+  return events[0] ?? null;
+}

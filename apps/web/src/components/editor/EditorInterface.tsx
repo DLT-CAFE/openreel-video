@@ -7,8 +7,8 @@ import { EditorActionRail } from "./EditorActionRail";
 import { AssetsPanel } from "./AssetsPanel";
 import { Preview } from "./Preview";
 import { InspectorPanel } from "./InspectorPanel";
-import { ReviewPanel } from "./review/ReviewPanel"; // DLT Cafe
-import { useReviewUIStore } from "./review/review-ui-store"; // DLT Cafe
+import { ReviewDock } from "./review/ReviewDock"; // DLT Cafe
+import { useReviewShortcuts } from "./review/use-review-shortcuts"; // DLT Cafe
 import { Timeline } from "./Timeline";
 import { KeyframeEditorPanel } from "./KeyframeEditorPanel";
 import { AudioMixer } from "../audio-mixer";
@@ -201,8 +201,7 @@ export const EditorInterface: React.FC = () => {
   const [timelineVh, setTimelineVh] = useState(DEFAULT_TIMELINE_VH);
 
   const chatVisible = panels.agentChat?.visible ?? false;
-  const reviewOpen = useReviewUIStore((s) => s.open); // DLT Cafe
-  const setReviewOpen = useReviewUIStore((s) => s.setOpen);
+  useReviewShortcuts(); // DLT Cafe: N adds a review note
   useEffect(() => {
     if (chatVisible) {
       setHasOpenedChat(true);
@@ -424,7 +423,7 @@ export const EditorInterface: React.FC = () => {
           style={{ gridArea: "inspector" }}
         >
           <PanelErrorBoundary name="Inspector">
-            {reviewOpen ? <ReviewPanel onClose={() => setReviewOpen(false)} /> : <InspectorPanel />}
+            <InspectorPanel />
           </PanelErrorBoundary>
         </div></>}
 
@@ -526,6 +525,7 @@ export const EditorInterface: React.FC = () => {
           </div>
         </div>
       </div>
+      <ReviewDock compact={compact} />{/* DLT Cafe: full-height review dock */}
       </div>
 
       {compact && (

@@ -7,7 +7,7 @@ import { useProjectStore } from "../../../stores/project-store";
 import { useReviewUIStore } from "./review-ui-store";
 
 export const ReviewRailButton: React.FC = () => {
-  const review = useProjectStore((s) => s.project.review);
+  const review = useProjectStore((s) => s.project?.review);
   const open = useMemo(() => getReview({ review }).notes.filter((n) => n.status === "open").length, [review]);
   const { open: visible, toggle } = useReviewUIStore();
   const label = `Review notes${open ? ` (${open} open)` : ""}`;

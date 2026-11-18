@@ -9,6 +9,8 @@ import { PanelErrorBoundary } from "../../components/ErrorBoundary";
 import { Icon } from "@/icons/Icon";
 import { useUIStore } from "../../stores/ui-store";
 import { useResizable } from "../editor/useResizable";
+import { ReviewDock } from "../../components/editor/review/ReviewDock"; // DLT Cafe
+import { useReviewShortcuts } from "../../components/editor/review/use-review-shortcuts"; // DLT Cafe
 
 const Preview = lazy(() =>
   import("../../components/editor/Preview").then((m) => ({ default: m.Preview })),
@@ -103,6 +105,7 @@ export function EditPage(): JSX.Element {
     (state) => state.panels.agentChat?.visible ?? false,
   );
   const setPanelVisible = useUIStore((state) => state.setPanelVisible);
+  useReviewShortcuts(); // DLT Cafe: N adds a review note
   const mediaW = useResizable({
     initial: 320,
     min: 220,
@@ -151,8 +154,9 @@ export function EditPage(): JSX.Element {
       };
 
   return (
+    <div className="flex h-full min-h-0 w-full overflow-hidden bg-border">{/* DLT Cafe: room for the review dock */}
     <div
-      className="grid h-full min-h-0 w-full gap-px overflow-hidden bg-border"
+      className="grid h-full min-h-0 min-w-0 flex-1 gap-px overflow-hidden bg-border"
       style={gridStyle}
       data-testid="desktop-edit-page"
     >
@@ -194,6 +198,8 @@ export function EditPage(): JSX.Element {
         </Suspense>
         <RowHandle onPointerDown={timelineH.onHandlePointerDown} />
       </DockRegion>
+    </div>
+    <ReviewDock variant="desktop" />
     </div>
   );
 }

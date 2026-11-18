@@ -5,6 +5,7 @@ import { HeadlessHost } from "./headless-host";
 import { executeTool } from "./executor";
 import { getTool } from "./registry";
 import { makeEmptyProject, makeProjectWithClip } from "./test-fixtures";
+import { DLTCAFE_UNLOCKED_TOOLS } from "./registry-dltcafe";
 import type { EditingHost } from "./host";
 
 function reviewHost(project: Project): EditingHost & { project(): Project } {
@@ -79,5 +80,34 @@ describe("review MCP tools", () => {
     expect((await call("reply_review_note", { noteId: "nope", text: "x" }, host)).error?.code).toBe("NOT_FOUND");
     expect((await call("add_review_note", { t: 1, text: "  " }, host)).error?.code).toBe("INVALID_PARAMS");
     expect((await call("add_review_note", { t: -3, text: "x" }, host)).error?.code).toBe("INVALID_PARAMS");
+  });
+});
+
+describe("wait_for_review_send", () => {
+  it("returns at once for an unseen Send, then waits from the cursor", async () => {
+    let review = addNote(getReview({}), { t: 2, text: "x" }).state;
+    review = sendNotesToClaude(review);
+    let waited: { since?: string; ms: number } | undefined;
+    const host = Object.assign(reviewHost({ ...makeProjectWithClip(), review }), {
+      async waitForReviewEvent(since: string | undefined, ms: number) {
+        waited = { since, ms };
+        return null;
+      },
+    });
+    const first = await call("wait_for_review_send", {}, host);
+    expect(first.data).toMatchObject({ event: "send" });
+    const cursor = (first.data as { cursor: string }).cursor;
+    expect(waited).toBeUndefined();
+
+    const second = await call("wait_for_review_send", { since: cursor, timeoutSec: 999 }, host);
+    expect(second.data).toMatchObject({ event: "timeout", cursor });
+    expect(waited).toEqual({ since: cursor, ms: 110_000 });
+  });
+
+  it("is read-only, unlocked and UNSUPPORTED without a wait method", async () => {
+    expect(getTool("wait_for_review_send")?.readOnly).toBe(true);
+    expect(DLTCAFE_UNLOCKED_TOOLS.has("wait_for_review_send")).toBe(true);
+    const res = await call("wait_for_review_send", {}, new HeadlessHost(makeEmptyProject()));
+    expect(res.error?.code).toBe("UNSUPPORTED");
   });
 });

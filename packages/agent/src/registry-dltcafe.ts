@@ -13,6 +13,7 @@ import {
   getReview,
   markClaudeSeen,
   replyToNote,
+  reviewEventSince,
   ReviewError,
   setNoteStatus,
   sortedNotes,
@@ -271,3 +272,43 @@ DLTCAFE_TOOLS.push(
     },
   },
 );
+
+/** Longest wait per call; stays under the desktop bridge's 120 s per-call limit. */
+export const REVIEW_WAIT_MAX_SEC = 110;
+const REVIEW_WAIT_DEFAULT_SEC = 100;
+
+/**
+ * DLT Cafe tools that only wait and read, so the MCP listener runs them
+ * without the shared host lock (a long wait must not block other calls).
+ */
+export const DLTCAFE_UNLOCKED_TOOLS: ReadonlySet<string> = new Set(["wait_for_review_send"]);
+
+DLTCAFE_TOOLS.push({
+  name: "wait_for_review_send",
+  domain: "project",
+  title: "Wait for review Send/Approve",
+  description:
+    `Block until the person presses "Send notes to Claude" or "Approve" in the Review panel, or until timeoutSec passes (default ${REVIEW_WAIT_DEFAULT_SEC}, max ${REVIEW_WAIT_MAX_SEC}). Returns {event: "send" | "approve" | "timeout", at, cursor}. Call again with since=cursor to keep listening; without since, a Send/Approve Claude hasn't read yet (list_review_notes) returns at once. After "send", call list_review_notes, make the edits, and reply to each note.`,
+  inputSchema: obj({ since: str, timeoutSec: num }),
+  readOnly: true,
+  destructive: false,
+  expensive: false,
+  handler: async (args, host) => {
+    host.requireOpenProject();
+    const since = typeof args.since === "string" && args.since ? args.since : undefined;
+    const now = reviewEventSince(readReview(host), since);
+    if (now) return ok(`Review ${now.event} at ${now.at}`, { ...now, cursor: now.at });
+    if (typeof host.waitForReviewEvent !== "function") {
+      return fail("wait_for_review_send is not available in this host", "UNSUPPORTED");
+    }
+    const sec = typeof args.timeoutSec === "number" && Number.isFinite(args.timeoutSec)
+      ? Math.min(Math.max(args.timeoutSec, 1), REVIEW_WAIT_MAX_SEC)
+      : REVIEW_WAIT_DEFAULT_SEC;
+    const event = await host.waitForReviewEvent(since, sec * 1000);
+    if (!event) {
+      const cursor = since ?? readReview(host).claudeSeenAt ?? "";
+      return ok(`No Send or Approve within ${sec}s; call again with since to keep waiting`, { event: "timeout", at: null, cursor });
+    }
+    return ok(`Review ${event.event} at ${event.at}`, { ...event, cursor: event.at });
+  },
+});

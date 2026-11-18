@@ -4,6 +4,7 @@ import { DesktopTitleBar } from "./shell/DesktopTitleBar";
 import { Workspace } from "./shell/Workspace";
 import { DesktopStartScreen } from "./start/DesktopStartScreen";
 import { DesktopExportButton } from "./editor/DesktopExportButton";
+import { ReviewTitleButton } from "../components/editor/review/ReviewTitleButton"; // DLT Cafe
 import { EditorBootstrapGate } from "./editor/EditorBootstrapGate";
 import { ErrorBoundary } from "../components/ErrorBoundary";
 import { useProjectStore } from "../stores/project-store";
@@ -104,6 +105,7 @@ export function DesktopApp(): JSX.Element {
             aria-pressed={agentChatVisible}
           />
         ) : null}
+        {hasProject ? <ReviewTitleButton /> : null}
         {hasProject ? <DesktopExportButton /> : null}
         <Button
           label="Settings"
