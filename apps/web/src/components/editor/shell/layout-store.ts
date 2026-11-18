@@ -15,6 +15,10 @@ export interface EditorLayout {
   portraitTimelineVh: number;
   /** Media drawer on the right, Inspector on the left. */
   swapSides: boolean;
+  /** Viewer as a full-height column on the left (Vertical workspace). */
+  stageLeft: boolean;
+  /** Width of that viewer column; null = fit the project aspect to the window height. */
+  stageWidth: number | null;
 }
 
 export interface CollabLayout {
@@ -39,13 +43,15 @@ export const DEFAULT_LAYOUT: EditorLayout = {
   landscapeTimelineVh: 42,
   portraitTimelineVh: 28,
   swapSides: false,
+  stageLeft: false,
+  stageWidth: null,
 };
 
 export const BUILTIN_WORKSPACES: readonly Workspace[] = [
   { id: "edit", name: "Edit", builtin: true, layout: { ...DEFAULT_LAYOUT }, collab: { open: false, side: "right", mode: "docked" } },
   { id: "review", name: "Review", builtin: true, layout: { mediaCollapsed: true, landscapeTimelineVh: 32, portraitTimelineVh: 26 }, collab: { open: true, tab: "notes", mode: "docked", side: "right" } },
   { id: "ai", name: "AI edit", builtin: true, layout: { mediaCollapsed: false, landscapeTimelineVh: 36 }, collab: { open: true, tab: "chat", mode: "docked", side: "right" } },
-  { id: "vertical", name: "Vertical", builtin: true, layout: { mediaCollapsed: true, portraitTimelineVh: 24 }, collab: { open: false } },
+  { id: "vertical", name: "Vertical", builtin: true, layout: { mediaCollapsed: false, stageLeft: true, stageWidth: null, portraitTimelineVh: 34, landscapeTimelineVh: 34 }, collab: { open: false } },
   { id: "timeline", name: "Timeline focus", builtin: true, layout: { mediaCollapsed: true, landscapeTimelineVh: 58, portraitTimelineVh: 50 }, collab: { open: false } },
 ];
 
@@ -58,6 +64,8 @@ export function sanitizeLayout(v: unknown): Partial<EditorLayout> {
   const out: Partial<EditorLayout> = {};
   if (typeof o.mediaCollapsed === "boolean") out.mediaCollapsed = o.mediaCollapsed;
   if (typeof o.swapSides === "boolean") out.swapSides = o.swapSides;
+  if (typeof o.stageLeft === "boolean") out.stageLeft = o.stageLeft;
+  if (o.stageWidth === null) out.stageWidth = null; else if (num(o.stageWidth, 200, 2400) !== undefined) out.stageWidth = o.stageWidth as number;
   if (o.mediaWidth === null) out.mediaWidth = null; else if (num(o.mediaWidth, 200, 1200) !== undefined) out.mediaWidth = o.mediaWidth as number;
   if (o.inspectorWidth === null) out.inspectorWidth = null; else if (num(o.inspectorWidth, 200, 1200) !== undefined) out.inspectorWidth = o.inspectorWidth as number;
   if (num(o.landscapeTimelineVh, 10, 90) !== undefined) out.landscapeTimelineVh = o.landscapeTimelineVh as number;
@@ -104,6 +112,7 @@ export const useEditorLayoutStore = create<LayoutState>((set, get) => {
     write(KEY, {
       mediaCollapsed: s.mediaCollapsed, mediaWidth: s.mediaWidth, inspectorWidth: s.inspectorWidth,
       landscapeTimelineVh: s.landscapeTimelineVh, portraitTimelineVh: s.portraitTimelineVh, swapSides: s.swapSides,
+      stageLeft: s.stageLeft, stageWidth: s.stageWidth,
       activeWorkspaceId: s.activeWorkspaceId,
     });
   };
@@ -141,5 +150,6 @@ export function currentLayout(): EditorLayout {
   return {
     mediaCollapsed: s.mediaCollapsed, mediaWidth: s.mediaWidth, inspectorWidth: s.inspectorWidth,
     landscapeTimelineVh: s.landscapeTimelineVh, portraitTimelineVh: s.portraitTimelineVh, swapSides: s.swapSides,
+    stageLeft: s.stageLeft, stageWidth: s.stageWidth,
   };
 }

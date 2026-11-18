@@ -55,3 +55,23 @@ describe("WorkspaceMenu", () => {
     expect(useCollabStore.getState().side).toBe("left");
   });
 });
+
+describe("Vertical workspace", () => {
+  it("puts the viewer full height on the left and other presets turn it off", () => {
+    applyWorkspace(BUILTIN_WORKSPACES.find((w) => w.id === "vertical")!);
+    expect(useEditorLayoutStore.getState()).toMatchObject({ stageLeft: true, stageWidth: null, mediaCollapsed: false });
+    useEditorLayoutStore.getState().setLayout({ stageWidth: 520 });
+    const ws = useEditorLayoutStore.getState().saveWorkspace("Tall", currentLayout(), { open: false, mode: "docked", tab: "chat", side: "right" });
+    applyWorkspace(BUILTIN_WORKSPACES.find((w) => w.id === "edit")!);
+    expect(useEditorLayoutStore.getState()).toMatchObject({ stageLeft: false, stageWidth: null });
+    applyWorkspace(ws);
+    expect(useEditorLayoutStore.getState()).toMatchObject({ stageLeft: true, stageWidth: 520 });
+  });
+
+  it("menu toggles the full-height viewer", () => {
+    render(<WorkspaceMenu />);
+    fireEvent.click(screen.getByRole("button", { name: /^Workspace/ }));
+    fireEvent.click(screen.getByRole("menuitemcheckbox", { name: /Viewer full height on the left/ }));
+    expect(useEditorLayoutStore.getState().stageLeft).toBe(true);
+  });
+});

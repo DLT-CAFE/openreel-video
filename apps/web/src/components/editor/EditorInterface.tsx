@@ -205,6 +205,34 @@ export const EditorInterface: React.FC = () => {
   const storedMediaW = useEditorLayoutStore((s) => s.mediaWidth);
   const storedInspectorW = useEditorLayoutStore((s) => s.inspectorWidth);
   const swapSides = useEditorLayoutStore((s) => s.swapSides);
+  // DLT Cafe: Vertical workspace: the viewer is a full-height column on the left.
+  const stageLeft = useEditorLayoutStore((s) => s.stageLeft);
+  const storedStageW = useEditorLayoutStore((s) => s.stageWidth);
+  const projectAspect = useProjectStore((s) => s.project.settings.width / Math.max(1, s.project.settings.height));
+  const [viewport, setViewport] = useState(() => ({ w: window.innerWidth, h: window.innerHeight }));
+  useEffect(() => {
+    const onResize = () => setViewport({ w: window.innerWidth, h: window.innerHeight });
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
+  const fitStageW = Math.round((viewport.h - 40 - 20 - 72) * projectAspect + 16 + 20);
+  const stageW = Math.min(Math.max(storedStageW ?? fitStageW, 280), Math.round(viewport.w * 0.6));
+  const beginStageResize = useCallback((e: React.PointerEvent) => {
+    e.preventDefault();
+    const startX = e.clientX;
+    const startW = stageW;
+    document.body.style.cursor = "col-resize";
+    document.body.style.userSelect = "none";
+    const onMove = (ev: PointerEvent) => useEditorLayoutStore.getState().setLayout({ stageWidth: Math.round(Math.min(Math.max(startW + ev.clientX - startX, 280), window.innerWidth * 0.6)) });
+    const onUp = () => {
+      document.body.style.cursor = "";
+      document.body.style.userSelect = "";
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onUp);
+    };
+    window.addEventListener("pointermove", onMove);
+    window.addEventListener("pointerup", onUp);
+  }, [stageW]);
   const mediaWidth = storedMediaW ?? (window.innerWidth < 1600 ? MIN_MEDIA_W : DEFAULT_MEDIA_W);
   // DLT Cafe M4: the tabbed inspector needs ~320px to fit its tab row.
   const inspectorWidth = storedInspectorW ?? (window.innerWidth < 1600 ? Math.max(MIN_INSPECTOR_W, 320) : DEFAULT_INSPECTOR_W);
@@ -376,8 +404,21 @@ export const EditorInterface: React.FC = () => {
   // DLT Cafe M2: the media panel is a collapsible drawer.
   const mediaCol = mediaCollapsed && !compact ? 0 : mediaWidth;
   const mediaHandle = mediaCollapsed && !compact ? 0 : RESIZE_HANDLE;
+  const tallStage = stageLeft && !compact && !chatVisible;
   const gridStyle: React.CSSProperties = compact
     ? { gridTemplateColumns: "minmax(0, 1fr)", gridTemplateRows: "minmax(220px, 48%) minmax(0, 1fr)", gridTemplateAreas: `'stage' '${compactPanel}'` }
+    : tallStage // DLT Cafe: viewer full height on the left; the rest shifts right
+    ? swapSides
+      ? {
+          gridTemplateColumns: `${stageW}px ${RESIZE_HANDLE}px minmax(0, 1fr) ${mediaHandle}px ${mediaCol}px`,
+          gridTemplateRows: `1fr ${RESIZE_HANDLE}px ${effectiveTimelineVh}vh`,
+          gridTemplateAreas: "'stage sh inspector mh media' 'stage sh th th th' 'stage sh timeline timeline timeline'",
+        }
+      : {
+          gridTemplateColumns: `${stageW}px ${RESIZE_HANDLE}px ${mediaCol}px ${mediaHandle}px minmax(0, 1fr)`,
+          gridTemplateRows: `1fr ${RESIZE_HANDLE}px ${effectiveTimelineVh}vh`,
+          gridTemplateAreas: "'stage sh media mh inspector' 'stage sh th th th' 'stage sh timeline timeline timeline'",
+        }
     : chatVisible
     ? {
         gridTemplateColumns: `${mediaCol}px ${mediaHandle}px minmax(0, 1fr) ${RESIZE_HANDLE}px ${chatWidth}px`,
@@ -459,7 +500,7 @@ export const EditorInterface: React.FC = () => {
         </div>
 
         {!chatVisible && <><div
-          hidden={compact}
+          hidden={compact || tallStage}
           className="editor-resizer grid place-items-center cursor-col-resize group/h"
           style={{ gridArea: "ih" }}
           onMouseDown={beginResize("inspector")}
@@ -519,6 +560,19 @@ export const EditorInterface: React.FC = () => {
           </>
         )}
 
+        {tallStage && (
+          <div
+            role="separator"
+            aria-orientation="vertical"
+            aria-label="Resize viewer column"
+            className="editor-resizer grid place-items-center cursor-col-resize group/h"
+            style={{ gridArea: "sh" }}
+            onPointerDown={beginStageResize}
+            onDoubleClick={() => useEditorLayoutStore.getState().setLayout({ stageWidth: null })}
+          >
+            <span className="h-10 w-1 rounded-full bg-transparent group-hover/h:bg-accent/40 transition-colors" />
+          </div>
+        )}{/* DLT Cafe: viewer column handle (double-click to fit) */}
         <div
           hidden={compact}
           className="editor-resizer grid place-items-center cursor-row-resize group/h"

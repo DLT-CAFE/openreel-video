@@ -30,7 +30,7 @@ export const WorkspaceMenu: React.FC = () => {
   const [naming, setNaming] = useState(false);
   const [name, setName] = useState("");
   const ref = useRef<HTMLDivElement>(null);
-  const { saved, activeWorkspaceId, swapSides, deleteWorkspace, saveWorkspace, setLayout } = useEditorLayoutStore();
+  const { saved, activeWorkspaceId, swapSides, stageLeft, deleteWorkspace, saveWorkspace, setLayout } = useEditorLayoutStore();
   const collabSide = useCollabStore((s) => s.side);
   const all = [...BUILTIN_WORKSPACES, ...saved];
   const active = all.find((w) => w.id === activeWorkspaceId);
@@ -99,6 +99,10 @@ export const WorkspaceMenu: React.FC = () => {
               <Save size={14} aria-hidden /> Save current layout…
             </button>
           )}
+          <button type="button" role="menuitemcheckbox" aria-checked={stageLeft} className={item} onClick={() => setLayout({ stageLeft: !stageLeft })}>
+            <PanelLeft size={14} aria-hidden /> <span className="flex-1">Viewer full height on the left</span>
+            {stageLeft && <Check size={14} aria-hidden className="text-accent" />}
+          </button>
           <button type="button" role="menuitemcheckbox" aria-checked={swapSides} className={item} onClick={() => setLayout({ swapSides: !swapSides })}>
             <ArrowLeftRight size={14} aria-hidden /> {swapSides ? "Media left, Inspector right" : "Inspector left, media right"}
           </button>
