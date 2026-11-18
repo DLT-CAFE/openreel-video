@@ -1,6 +1,5 @@
 import type { JSX } from "react";
 import { lazy, Suspense, useEffect } from "react";
-import { DesktopTitleBar } from "./shell/DesktopTitleBar";
 import { WindowControls } from "./shell/WindowControls";
 import { EditorChromeProvider, type EditorChrome } from "../components/editor/shell/editor-chrome"; // DLT Cafe
 import { DesktopStartScreen } from "./start/DesktopStartScreen";
@@ -17,7 +16,7 @@ import { getLiveEditorHost } from "../services/agent/host-singleton";
 import { createExportJobRunner } from "../services/agent/export-job-runner";
 import { useSettingsStore } from "../stores/settings-store";
 import { SettingsDialog } from "../components/editor/settings/SettingsDialog";
-import { ToolcraftButton as Button, ToolcraftIconButton as IconButton } from "@openreel/ui";
+import { ToolcraftIconButton as IconButton } from "@openreel/ui";
 import { Settings } from "@/icons/lucide-compat";
 // DLT Cafe: desktop now uses the shared theme tokens (index.css, dark by
 // default via theme-store) instead of forcing the Resolve palette in
@@ -116,18 +115,7 @@ export function DesktopApp(): JSX.Element {
 
   return (
     <div className="openreel-desktop isolate flex h-screen w-screen flex-col overflow-hidden bg-bg text-fg">
-      {!hasProject ? (
-        <DesktopTitleBar platform={platform}>
-          <Button
-            label="Settings"
-            variant="secondary"
-            size="sm"
-            icon={<Settings size={15} aria-hidden />}
-            onClick={() => useSettingsStore.getState().openSettings()}
-            className="mr-2"
-          />
-        </DesktopTitleBar>
-      ) : null}
+      {/* DLT Cafe: the home screen draws its own title bar (drag region, settings, window controls) */}
       <div className="min-h-0 flex-1">
         <ErrorBoundary
           onError={(error, info) =>
@@ -148,7 +136,7 @@ export function DesktopApp(): JSX.Element {
               </EditorChromeProvider>
             </EditorBootstrapGate>
           ) : (
-            <DesktopStartScreen />
+            <DesktopStartScreen chrome={chrome} />
           )}
         </ErrorBoundary>
       </div>

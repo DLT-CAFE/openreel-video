@@ -9,9 +9,25 @@ import { toast } from "../../../stores/notification-store";
 const MEDIA = /\.(mp4|mov|m4v|webm|mkv|wav|mp3|m4a|aac|flac|png|jpe?g|webp|gif)$/i;
 
 /** The live sample renders at its own size (e.g. 1080×1920); scale it down to fit, like a video. */
-const LiveFrame: React.FC<{ src: string; title: string; width: number; height: number }> = ({ src, title, width, height }) => {
+const LiveFrame: React.FC<{ src: string; title: string; width: number; height: number; cycleClasses?: readonly string[] }> = ({ src, title, width, height, cycleClasses }) => {
   const box = useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState(0.3);
+  // Templates (not full samples) only show something with a body class: load the HTML and cycle them.
+  const [doc, setDoc] = useState<string | null>(null);
+  useEffect(() => {
+    if (!cycleClasses?.length) return;
+    let live = true;
+    void fetch(src)
+      .then((r) => r.text())
+      .then((html) => {
+        const script = `<script>(()=>{const c=${JSON.stringify(cycleClasses)};let i=0;const f=()=>{document.body.className=c[i++%c.length]};f();setInterval(f,1600)})()</script>`;
+        if (live) setDoc(html.includes("</body>") ? html.replace("</body>", `${script}</body>`) : html + script);
+      })
+      .catch(() => undefined);
+    return () => {
+      live = false;
+    };
+  }, [src, cycleClasses]);
   useEffect(() => {
     const el = box.current;
     if (!el) return;
@@ -26,7 +42,7 @@ const LiveFrame: React.FC<{ src: string; title: string; width: number; height: n
       {/* sandboxed + credentialless: the sample runs its own scripts and nothing else */}
       <iframe
         title={title}
-        src={src}
+        {...(doc ? { srcDoc: doc } : { src })}
         sandbox="allow-scripts"
         {...({ credentialless: "" } as Record<string, string>)}
         style={{ width, height, transform: `translate(-50%, -50%) scale(${scale})`, transformOrigin: "center" }}
@@ -109,7 +125,7 @@ export const StyleDetailDialog: React.FC<{ style: CreatorStyle; onClose: () => v
             )}
             <div className="relative grid min-h-[320px] flex-1 place-items-center overflow-hidden rounded-xl bg-black">
               {tab === "live" && live ? (
-                <LiveFrame src={live} title={`${style.name} live preview`} width={canvas.width} height={canvas.height} />
+                <LiveFrame src={live} title={`${style.name} live preview`} width={style.media.liveOptions?.width ?? canvas.width} height={style.media.liveOptions?.height ?? canvas.height} cycleClasses={style.media.liveOptions?.cycleClasses} />
               ) : loop ? (
                 <video src={loop} poster={poster} autoPlay muted loop playsInline controls className="max-h-[60vh] w-full object-contain" />
               ) : poster ? (

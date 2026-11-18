@@ -18,6 +18,10 @@ const CATALOG_REL = "editing-styles/studio-catalog/catalog/catalog.json";
 const MEDIA_REL = "editing-styles/studio-catalog/app/public/styles";
 /** Live samples that aren't at the usual examples/placeholder-sample/index.html. */
 const LIVE_SAMPLE_OVERRIDES: Record<string, string> = { "yap-and-show": "templates/ui-tiles.html" };
+/** Templates that need a size and body classes to show something (the page cycles through them). */
+const LIVE_SAMPLE_OPTIONS: Record<string, { width: number; height: number; cycleClasses?: string[] }> = {
+  "yap-and-show": { width: 600, height: 600, cycleClasses: ["show-docs", "show-ig", "show-stripe"] },
+};
 
 const TYPES: Record<string, string> = {
   ".json": "application/json; charset=utf-8",
@@ -79,6 +83,8 @@ export interface StyleMedia {
   readonly variants: string[];
   /** Path under skills/ for the live HTML sample, e.g. "rapid-list/examples/placeholder-sample/index.html". */
   readonly live?: string;
+  /** Size of the live sample when it isn't the style's canvas, and body classes to cycle (templates). */
+  readonly liveOptions?: { width: number; height: number; cycleClasses?: string[] };
 }
 
 export interface StylesIndex {
@@ -123,6 +129,7 @@ export function buildStylesIndex(root = readStylesRoot()): StylesIndex {
         ...(fileSet.has(`${id}.mp4`) ? { loop: `${id}.mp4` } : {}),
         variants,
         ...(live ? { live } : {}),
+        ...(live && LIVE_SAMPLE_OPTIONS[id] ? { liveOptions: LIVE_SAMPLE_OPTIONS[id] } : {}),
       };
       return {
         ...s,

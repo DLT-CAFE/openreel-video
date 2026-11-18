@@ -21,7 +21,13 @@ export interface CreatorStyle {
   readonly lends?: Readonly<Record<string, string>>;
   readonly matte?: boolean;
   readonly tags?: readonly string[];
-  readonly media: { poster?: string; loop?: string; variants: readonly string[]; live?: string };
+  readonly media: {
+    poster?: string;
+    loop?: string;
+    variants: readonly string[];
+    live?: string;
+    liveOptions?: { width: number; height: number; cycleClasses?: readonly string[] };
+  };
   readonly skillPath?: string;
   readonly paths: Readonly<Record<string, string>>;
 }

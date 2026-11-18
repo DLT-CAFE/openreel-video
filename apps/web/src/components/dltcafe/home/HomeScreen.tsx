@@ -14,6 +14,7 @@ import { useCreatorStyles } from "../../../services/dltcafe/creator-styles";
 import { ProjectsView, type ProjectsMode } from "./ProjectsView";
 import { StyleGallery } from "../styles/StyleGallery";
 import { toast } from "../../../stores/notification-store";
+import { DRAG_STYLE, NO_DRAG_STYLE, type EditorChrome } from "../../editor/shell/editor-chrome";
 
 export type HomeSection = "home" | "projects" | "styles" | "templates" | "archived" | "trash";
 
@@ -32,7 +33,9 @@ export const HomeScreen: React.FC<{
   /** Settings button (the desktop title bar has its own). */
   showSettings?: boolean;
   initialSection?: HomeSection;
-}> = ({ platform, onEnterEditor, templates, showSettings = platform === "web", initialSection = "home" }) => {
+  /** Desktop: the header is the window's title bar (drag region, traffic-light inset, settings + window controls). */
+  chrome?: EditorChrome;
+}> = ({ platform, onEnterEditor, templates, showSettings = platform === "web", initialSection = "home", chrome }) => {
   const [section, setSection] = useState<HomeSection>(initialSection);
   const [projects, setProjects] = useState<LibraryProject[]>([]);
   const [loading, setLoading] = useState(true);
@@ -93,15 +96,16 @@ export const HomeScreen: React.FC<{
 
   return (
     <div className="flex h-full min-h-0 w-full flex-col bg-bg text-fg" data-testid="home-screen">
-      <header className="flex h-12 shrink-0 items-center gap-3 border-b border-border bg-bg-1 px-4">
+      <header className="flex h-12 shrink-0 items-center gap-3 border-b border-border bg-bg-1 px-4"
+        style={{ ...(chrome?.dragRegion ? DRAG_STYLE : {}), ...(chrome?.leadingInset ? { paddingLeft: chrome.leadingInset } : {}) }}>
         <OpenReelMark size={22} className="text-accent" />
         <span className="text-[14px] font-semibold tracking-tight">OpenReel</span>
-        <label className="relative mx-auto w-full max-w-md">
+        <label className="relative mx-auto w-full max-w-md" style={chrome?.dragRegion ? NO_DRAG_STYLE : undefined}>
           <Search size={14} className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-fg-muted" aria-hidden />
           <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search projects and styles" aria-label="Search projects and styles"
             className="h-8 w-full rounded-md border border-border bg-bg pl-8 pr-2 text-[13px] placeholder:text-fg-muted focus:border-accent focus:outline-none" />
         </label>
-        <button type="button" onClick={toggleTheme} aria-label={`Theme: ${mode}`} title="Switch theme" className="grid h-8 w-8 place-items-center rounded-md text-fg-2 hover:bg-bg-2 hover:text-fg">
+        <button type="button" style={chrome?.dragRegion ? NO_DRAG_STYLE : undefined} onClick={toggleTheme} aria-label={`Theme: ${mode}`} title="Switch theme" className="grid h-8 w-8 place-items-center rounded-md text-fg-2 hover:bg-bg-2 hover:text-fg">
           <ThemeIcon size={16} aria-hidden />
         </button>
         {showSettings && (
@@ -109,6 +113,7 @@ export const HomeScreen: React.FC<{
             <Settings size={16} aria-hidden />
           </button>
         )}
+        {chrome?.trailingSlot && <div className="flex items-center" style={NO_DRAG_STYLE}>{chrome.trailingSlot}</div>}
       </header>
 
       <div className="flex min-h-0 flex-1">

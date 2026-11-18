@@ -5,10 +5,11 @@ import type { JSX } from "react";
 import { useCallback } from "react";
 import { HomeScreen } from "../../components/dltcafe/home/HomeScreen";
 import { useUIStore } from "../../stores/ui-store";
+import type { EditorChrome } from "../../components/editor/shell/editor-chrome";
 
-export function DesktopStartScreen(): JSX.Element {
+export function DesktopStartScreen({ chrome }: { chrome?: EditorChrome } = {}): JSX.Element {
   const setDesktopPage = useUIStore((state) => state.setDesktopPage);
   // Opening or creating a project sets hasOpenProject, and DesktopApp swaps in the editor.
   const toEditor = useCallback(() => setDesktopPage("edit"), [setDesktopPage]);
-  return <HomeScreen platform="desktop" onEnterEditor={toEditor} />;
+  return <HomeScreen platform="desktop" onEnterEditor={toEditor} chrome={chrome} />;
 }
