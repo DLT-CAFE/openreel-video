@@ -29,6 +29,8 @@ import { saveFileHandle, saveDirectoryHandle } from "../../services/media-storag
 import { FolderImportButton } from "./media-import/FolderImportButton"; // DLT Cafe
 import { summarizeScan, type FolderScan } from "./media-import/folder-import"; // DLT Cafe
 import { LinkedMediaBanner } from "./media-import/LinkedMediaBanner"; // DLT Cafe
+import { useEditorLayoutStore } from "./shell/layout-store"; // DLT Cafe M2
+import { ChevronsLeft } from "lucide-react"; // DLT Cafe M2
 import { pickMediaFilesWithHandles, supportsOpenFilePicker } from "../../services/dltcafe/linked-media"; // DLT Cafe
 import { ToolcraftButton as Button } from "@openreel/ui";
 import { ToolcraftIconButton as IconButton } from "@openreel/ui";
@@ -1580,10 +1582,16 @@ export const AssetsPanel: React.FC = () => {
   return (
     <div
       data-tour="assets"
-      className="w-full h-full bg-bg-1 overflow-hidden flex flex-row relative"
+      className="w-full h-full bg-bg-1 overflow-hidden flex flex-col relative"
     >
-      {/* ── Vertical tool rail (icon + label, left) ───────────── */}
-      <div className="flex flex-col items-center gap-1 px-0 py-[14px] border-r border-border bg-bg-1 overflow-y-auto scrollbar-none shrink-0 w-[92px]">
+      {/* ── DLT Cafe M2: horizontal category bar (icon over label) ── */}
+      <div className="flex shrink-0 items-center border-b border-border bg-bg-1">
+      <div
+        role="toolbar"
+        aria-label="Asset categories"
+        className="flex min-w-0 flex-1 items-stretch gap-0.5 overflow-x-auto px-1.5 py-1 scrollbar-none [mask-image:linear-gradient(to_right,black_calc(100%-24px),transparent)]"
+        onWheel={(e) => { if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) e.currentTarget.scrollLeft += e.deltaY; }}
+      >
         {ASSETS_TABS.map((tab) => {
           const Icon = TAB_ICONS[tab.value];
           const isActive = activeTab === tab.value;
@@ -1595,19 +1603,29 @@ export const AssetsPanel: React.FC = () => {
               aria-pressed={isActive}
               title={tab.label}
               onClick={() => setActiveTab(tab.value)}
-              className={`group flex h-16 w-[68px] shrink-0 flex-col items-center justify-center gap-1 rounded-[10px] px-1 py-2 text-[10px] leading-tight tracking-tight transition-colors ${
+              className={`group flex h-[52px] min-w-[52px] shrink-0 flex-col items-center justify-center gap-1 rounded-lg px-1.5 text-[11px] leading-tight transition-colors hover:bg-hover ${
                 isActive
                   ? "bg-selected text-accent font-semibold"
-                  : "text-fg-muted font-medium"
+                  : "text-fg-2 font-medium hover:text-fg"
               }`}
             >
-              <Icon size={20} strokeWidth={isActive ? 1.8 : 1.7} />
-              <span className="block max-w-full text-center leading-[11px]">
-                {tab.label}
+              <Icon size={18} strokeWidth={isActive ? 1.9 : 1.7} />
+              <span className="block max-w-full whitespace-nowrap text-center leading-[13px]">
+                {tab.value === "templates" ? "Templates" : tab.value === "ai" ? "AI" : tab.label}
               </span>
             </button>
           );
         })}
+      </div>
+        <button
+          type="button"
+          aria-label="Hide media panel"
+          title="Hide media panel"
+          onClick={() => useEditorLayoutStore.getState().setMediaCollapsed(true)}
+          className="mr-1.5 grid shrink-0 place-items-center rounded-md p-1.5 text-fg-2 hover:bg-hover hover:text-fg [.editor-compact_&]:hidden"
+        >
+          <ChevronsLeft size={16} aria-hidden />
+        </button>
       </div>
 
       {/* ── Body: section content fills the remaining space ──── */}

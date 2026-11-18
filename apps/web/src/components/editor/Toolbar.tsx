@@ -27,6 +27,8 @@ import { ProjectSwitcher } from "./ProjectSwitcher";
 import { SettingsDialog } from "./settings/SettingsDialog";
 import { Icon } from "@/icons/Icon";
 import { DRAG_STYLE, NO_DRAG_STYLE, useEditorChrome } from "./shell/editor-chrome"; // DLT Cafe
+import { EditorActionRail } from "./EditorActionRail"; // DLT Cafe M2
+import { useCompactEditor } from "../../hooks/useCompactEditor"; // DLT Cafe M2
 import { toast } from "../../stores/notification-store";
 import { useAnalytics, AnalyticsEvents } from "../../hooks/useAnalytics";
 import {
@@ -52,6 +54,7 @@ type ExportType =
 
 export const Toolbar: React.FC = () => {
   const chrome = useEditorChrome(); // DLT Cafe: desktop title-bar mode
+  const compact = useCompactEditor(); // DLT Cafe M2
   const project = useProjectStore((state) => state.project);
   const loopStart = useTimelineStore((state) => state.loopStart);
   const loopEnd = useTimelineStore((state) => state.loopEnd);
@@ -389,7 +392,9 @@ export const Toolbar: React.FC = () => {
 
       {/* DLT Cafe M3: the "Manual | AI editing" mode switch is gone; the AI chat and
           review notes live in one Collaborate panel (floating "AI & notes" button). */}
-      <div className="w-[120px] shrink-0" aria-hidden />
+      {/* DLT Cafe M2: the old vertical rail lives here now (home, search, undo/redo,
+          history, keyframes, mixer, JSON, theme, more: settings, recorder, tours). */}
+      {!compact && <div className="shrink-0" style={chrome.dragRegion ? NO_DRAG_STYLE : undefined}><EditorActionRail orientation="horizontal" /></div>}
 
       {/* ─── Center: project name ─────────────────────────────── */}
       <div className="flex flex-1 min-w-0 items-center justify-center gap-1.5">

@@ -30,13 +30,16 @@ import {
   MOGRAPH_TOUR_KEY,
 } from "./tour";
 
+// DLT Cafe M2: the rail can also render as a horizontal bar in the top bar.
+const RailPlacement = React.createContext<"end" | "bottom">("end");
+
 const RailButton: React.FC<{
   label: string;
   icon: string;
   onClick: () => void;
   active?: boolean;
 }> = ({ label, icon, onClick, active = false }) => (
-  <Tooltip content={label} placement="end">
+  <Tooltip content={label} placement={React.useContext(RailPlacement)}>
     <IconButton
       label={label}
       icon={<Icon name={icon} size={16} ariaHidden />}
@@ -47,7 +50,8 @@ const RailButton: React.FC<{
   </Tooltip>
 );
 
-export const EditorActionRail: React.FC = () => {
+export const EditorActionRail: React.FC<{ orientation?: "vertical" | "horizontal" }> = ({ orientation = "vertical" }) => {
+  const horizontal = orientation === "horizontal"; // DLT Cafe M2
   const { undo, redo } = useProjectStore();
   const {
     openModal,
@@ -78,12 +82,16 @@ export const EditorActionRail: React.FC = () => {
   const themeActionLabel = `Theme: ${themeLabel}. Switch to ${nextThemeLabel}`;
 
   return (
+    <RailPlacement.Provider value={horizontal ? "bottom" : "end"}>
     <nav
       data-tour="toolbar"
       aria-label="Editor tools"
-      className="flex w-12 shrink-0 flex-col items-center gap-1 border-r border-border bg-bg-1 py-3"
+      data-orientation={orientation}
+      className={horizontal
+        ? "flex h-10 shrink-0 flex-row items-center gap-0.5"
+        : "flex w-12 shrink-0 flex-col items-center gap-1 border-r border-border bg-bg-1 py-3"}
     >
-      <Tooltip content="Back to home" placement="end">
+      <Tooltip content="Back to home" placement={horizontal ? "bottom" : "end"}>
         <IconButton
           label="Back to home"
           icon={<House size={16} aria-hidden />}
@@ -93,7 +101,7 @@ export const EditorActionRail: React.FC = () => {
         />
       </Tooltip>
 
-      <div className="my-1.5 h-px w-6 bg-border" />
+      <div className={horizontal ? "mx-1.5 h-5 w-px bg-border" : "my-1.5 h-px w-6 bg-border"} />
 
       <RailButton
         label="Search tools, effects, or ask AI"
@@ -111,7 +119,7 @@ export const EditorActionRail: React.FC = () => {
         onClick={() => void redo()}
       />
 
-      <div className="my-1.5 h-px w-6 bg-border" />
+      <div className={horizontal ? "mx-1.5 h-5 w-px bg-border" : "my-1.5 h-px w-6 bg-border"} />
 
       <RailButton
         label="Action history"
@@ -138,9 +146,9 @@ export const EditorActionRail: React.FC = () => {
         onClick={() => openModal("scriptView")}
       />
 
-      <div className="flex-1" />
+      {horizontal ? <div className="mx-1.5 h-5 w-px bg-border" /> : <div className="flex-1" />}
 
-      <Tooltip content={themeActionLabel} placement="end">
+      <Tooltip content={themeActionLabel} placement={horizontal ? "bottom" : "end"}>
         <IconButton
           label={themeActionLabel}
           icon={themeIcon}
@@ -151,7 +159,7 @@ export const EditorActionRail: React.FC = () => {
       </Tooltip>
 
       <DropdownMenu
-        placement="end"
+        placement={horizontal ? "bottom" : "end"}
         button={{
           label: "More editor actions",
           icon: <Icon name="star" size={16} ariaHidden />,
@@ -214,5 +222,6 @@ export const EditorActionRail: React.FC = () => {
         ]}
       />
     </nav>
+    </RailPlacement.Provider>
   );
 };

@@ -8,6 +8,8 @@ import { AssetsPanel } from "./AssetsPanel";
 import { Preview } from "./Preview";
 import { InspectorPanel } from "./InspectorPanel";
 import { CollabDock } from "./collab/CollabDock"; // DLT Cafe M3
+import { useEditorLayoutStore } from "./shell/layout-store"; // DLT Cafe M2
+import { ChevronsRight } from "lucide-react"; // DLT Cafe M2
 import { CollabLauncher } from "./collab/CollabLauncher"; // DLT Cafe M3
 import { installCollabBridges, setCollabChatBridgeEnabled } from "./collab/collab-store"; // DLT Cafe M3
 import { useReviewShortcuts } from "./review/use-review-shortcuts"; // DLT Cafe
@@ -204,6 +206,8 @@ export const EditorInterface: React.FC = () => {
 
   const chatVisible = panels.agentChat?.visible ?? false;
   useReviewShortcuts(); // DLT Cafe: N adds a review note
+  const mediaCollapsed = useEditorLayoutStore((s) => s.mediaCollapsed); // DLT Cafe M2
+  const setMediaCollapsed = useEditorLayoutStore((s) => s.setMediaCollapsed);
   useEffect(() => installCollabBridges(), []); // DLT Cafe M3: chat + notes open the Collaborate panel
   useEffect(() => setCollabChatBridgeEnabled(!compact), [compact]);
   useEffect(() => {
@@ -347,17 +351,20 @@ export const EditorInterface: React.FC = () => {
   const effectiveTimelineVh = timelineMaximized
     ? COMPACT_TIMELINE_VH
     : timelineVh;
+  // DLT Cafe M2: the media panel is a collapsible drawer.
+  const mediaCol = mediaCollapsed && !compact ? 0 : mediaWidth;
+  const mediaHandle = mediaCollapsed && !compact ? 0 : RESIZE_HANDLE;
   const gridStyle: React.CSSProperties = compact
     ? { gridTemplateColumns: "minmax(0, 1fr)", gridTemplateRows: "minmax(220px, 48%) minmax(0, 1fr)", gridTemplateAreas: `'stage' '${compactPanel}'` }
     : chatVisible
     ? {
-        gridTemplateColumns: `${mediaWidth}px ${RESIZE_HANDLE}px minmax(0, 1fr) ${RESIZE_HANDLE}px ${chatWidth}px`,
+        gridTemplateColumns: `${mediaCol}px ${mediaHandle}px minmax(0, 1fr) ${RESIZE_HANDLE}px ${chatWidth}px`,
         gridTemplateRows: `1fr ${RESIZE_HANDLE}px ${effectiveTimelineVh}vh`,
         gridTemplateAreas:
           "'media mh stage ch chat' 'th th th th th' 'timeline timeline timeline timeline timeline'",
       }
     : {
-        gridTemplateColumns: `${mediaWidth}px ${RESIZE_HANDLE}px 1fr ${RESIZE_HANDLE}px ${inspectorWidth}px`,
+        gridTemplateColumns: `${mediaCol}px ${mediaHandle}px 1fr ${RESIZE_HANDLE}px ${inspectorWidth}px`,
         gridTemplateRows: `1fr ${RESIZE_HANDLE}px ${effectiveTimelineVh}vh`,
         gridTemplateAreas:
           "'media mh stage ih inspector' 'th th th th th' 'timeline timeline timeline timeline timeline'",
@@ -371,14 +378,14 @@ export const EditorInterface: React.FC = () => {
       <Toolbar />
 
       <div className="editor-body relative flex-1 min-h-0 flex">
-        <div className="editor-rail" hidden={compact && compactPanel !== "media"}><EditorActionRail /></div>
+        {compact && <div className="editor-rail" hidden={compactPanel !== "media"}><EditorActionRail /></div>}{/* DLT Cafe M2: desktop/web rail moved into the top bar */}
         <div
           className={`editor-workspace flex-1 min-w-0 min-h-0 grid gap-0 bg-bg p-2.5 ${chatVisible && !compact ? "ai-workspace-grid" : ""}`}
           style={gridStyle}
         >
         <div
           id="editor-panel-media"
-          hidden={compact && compactPanel !== "media"}
+          hidden={(compact && compactPanel !== "media") || (!compact && mediaCollapsed)}
           className="editor-panel bg-bg-1 min-w-0 min-h-0 overflow-hidden rounded-xl border border-border shadow-sm"
           style={{ gridArea: "media" }}
         >
@@ -388,7 +395,7 @@ export const EditorInterface: React.FC = () => {
         </div>
 
         <div
-          hidden={compact}
+          hidden={compact || mediaCollapsed}
           className="editor-resizer grid place-items-center cursor-col-resize group/h"
           style={{ gridArea: "mh" }}
           onMouseDown={beginResize("media")}
@@ -410,6 +417,17 @@ export const EditorInterface: React.FC = () => {
             <Preview />
           </PanelErrorBoundary>
           <CollabLauncher />{/* DLT Cafe M3 */}
+          {!compact && mediaCollapsed && (
+            <button
+              type="button"
+              aria-label="Show media panel"
+              title="Show media panel"
+              onClick={() => setMediaCollapsed(false)}
+              className="absolute left-2 top-1/2 z-30 grid h-16 w-7 -translate-y-1/2 place-items-center rounded-lg border border-border-strong bg-bg-1 text-fg-2 shadow-md hover:bg-hover hover:text-fg"
+            >
+              <ChevronsRight size={16} aria-hidden />
+            </button>
+          )}
         </div>
 
         {!chatVisible && <><div
