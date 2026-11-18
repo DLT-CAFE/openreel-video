@@ -26,6 +26,7 @@ import { HistoryPanel } from "./inspector/HistoryPanel";
 import { ProjectSwitcher } from "./ProjectSwitcher";
 import { SettingsDialog } from "./settings/SettingsDialog";
 import { Icon } from "@/icons/Icon";
+import { DRAG_STYLE, NO_DRAG_STYLE, useEditorChrome } from "./shell/editor-chrome"; // DLT Cafe
 import { toast } from "../../stores/notification-store";
 import { useAnalytics, AnalyticsEvents } from "../../hooks/useAnalytics";
 import {
@@ -50,6 +51,7 @@ type ExportType =
   | "project";
 
 export const Toolbar: React.FC = () => {
+  const chrome = useEditorChrome(); // DLT Cafe: desktop title-bar mode
   const project = useProjectStore((state) => state.project);
   const loopStart = useTimelineStore((state) => state.loopStart);
   const loopEnd = useTimelineStore((state) => state.loopEnd);
@@ -380,16 +382,20 @@ export const Toolbar: React.FC = () => {
   ];
 
   return (
-    <header className="h-[60px] flex items-center gap-2 px-2 sm:gap-[18px] sm:px-[18px] bg-bg-1 border-b border-border shrink-0 z-30 relative">
+    <header
+      className="h-[60px] flex items-center gap-2 px-2 sm:gap-[18px] sm:px-[18px] bg-bg-1 border-b border-border shrink-0 z-30 relative"
+      style={chrome.dragRegion ? { ...DRAG_STYLE, paddingLeft: chrome.leadingInset || undefined } : undefined}
+      data-editor-chrome={chrome.platform}
+    >
 
-      <div role="group" aria-label="Editing mode" className="flex shrink-0 rounded-lg bg-bg-3 p-1 text-xs">
+      <div role="group" aria-label="Editing mode" className="flex shrink-0 rounded-lg bg-bg-3 p-1 text-xs" style={chrome.dragRegion ? NO_DRAG_STYLE : undefined}>
         <button type="button" aria-pressed={!aiMode} className={`rounded-md px-3 py-1.5 ${!aiMode ? "bg-bg-1 text-fg" : "text-fg-muted"}`} onClick={() => useUIStore.getState().setPanelVisible("agentChat", false)}>Manual</button>
         <button type="button" aria-pressed={aiMode} className={`rounded-md px-3 py-1.5 ${aiMode ? "bg-accent-soft text-accent" : "text-fg-muted"}`} onClick={() => useUIStore.getState().setPanelVisible("agentChat", true)}>AI editing</button>
       </div>
 
       {/* ─── Center: project name ─────────────────────────────── */}
       <div className="flex flex-1 min-w-0 items-center justify-center gap-1.5">
-        <div className="hidden sm:block min-w-0">
+        <div className="hidden sm:block min-w-0" style={chrome.dragRegion ? NO_DRAG_STYLE : undefined}>
         <ToolcraftTextInputControl
           label="Project name"
           isLabelHidden
@@ -408,13 +414,13 @@ export const Toolbar: React.FC = () => {
           className="max-w-[min(220px,40vw)] bg-transparent border-0 text-center font-medium text-[14px] tracking-tight text-fg-2 px-2 py-0.5 rounded-md min-w-[60px] focus:bg-bg-2 focus:outline-none"
         />
         </div>
-        <ProjectSwitcher />
+        <span style={chrome.dragRegion ? NO_DRAG_STYLE : undefined}><ProjectSwitcher /></span>
       </div>
 
       {/* ─── Right: export only ───────────────────────────────── */}
-      <div className="flex items-center justify-end shrink-0">
-        {/* Export */}
-        {exportState.isExporting ? (
+      <div className="flex items-center justify-end shrink-0" style={chrome.dragRegion ? NO_DRAG_STYLE : undefined}>
+        {/* Export (DLT Cafe: the desktop app swaps in its native export button) */}
+        {chrome.exportSlot ? chrome.exportSlot : exportState.isExporting ? (
           <button
             type="button"
             onClick={handleCancelExport}
@@ -551,6 +557,7 @@ export const Toolbar: React.FC = () => {
             </DropdownMenu>
           </div>
         )}
+        {chrome.trailingSlot}
       </div>
 
       {/* ─── Auxiliary popups & dialogs ───────────────────────── */}

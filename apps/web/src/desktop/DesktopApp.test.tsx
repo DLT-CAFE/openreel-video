@@ -19,9 +19,22 @@ vi.mock("./editor/EditorBootstrapGate", () => ({
   ),
 }));
 
-vi.mock("./pages/EditPage", () => ({
-  EditPage: () => null,
-}));
+// DLT Cafe: desktop renders the shared EditorInterface; the stub shows what the
+// desktop chrome passes in (native export, settings, window controls).
+vi.mock("../components/editor/EditorInterface", async () => {
+  const { useEditorChrome } = await import("../components/editor/shell/editor-chrome");
+  return {
+    EditorInterface: () => {
+      const chrome = useEditorChrome();
+      return (
+        <div data-testid="shared-editor" data-platform={chrome.platform} data-drag={String(chrome.dragRegion)}>
+          {chrome.exportSlot}
+          {chrome.trailingSlot}
+        </div>
+      );
+    },
+  };
+});
 
 vi.mock("./editor/DesktopExportButton", () => ({
   DesktopExportButton: () => <Button label="Video Export" />,
@@ -70,41 +83,19 @@ describe("DesktopApp", () => {
     mockHasProject(false);
     const { getByText, queryByTestId } = render(<DesktopApp />);
     expect(getByText("New Project")).toBeTruthy();
-    expect(queryByTestId("desktop-workspace")).toBeNull();
+    expect(queryByTestId("shared-editor")).toBeNull();
   });
 
-  it("renders the title bar and workspace when a project is open", () => {
-    mockHasProject(true);
-    const { getByText, getByTestId } = render(<DesktopApp />);
-    expect(getByText("OpenReel")).toBeTruthy();
-    expect(getByTestId("desktop-workspace")).toBeTruthy();
-  });
-
-  it("keeps video editing actions available for stale motion state", () => {
-    mockHasProject(true);
-    const editView = render(<DesktopApp />);
-    expect(editView.getByRole("button", { name: "Video Export" })).toBeTruthy();
-    editView.unmount();
-
-    useUIStore.setState({ desktopPage: "motion" });
-    const motionView = render(<DesktopApp />);
-    expect(motionView.getByRole("button", { name: "Video Export" })).toBeTruthy();
-    expect(motionView.getByRole("button", { name: "AI Editor" })).toBeTruthy();
-  });
-
-  it("toggles the AI Editor side panel from the desktop title bar", () => {
+  it("renders the shared editor layout in desktop chrome mode when a project is open", async () => {
     mockHasProject(true);
     const view = render(<DesktopApp />);
-    const button = view.getByRole("button", { name: "AI Editor" });
-
-    expect(button).toHaveAttribute("aria-pressed", "false");
-    fireEvent.click(button);
-
-    expect(useUIStore.getState().panels.agentChat.visible).toBe(true);
-    expect(button).toHaveAttribute("aria-pressed", "true");
-
-    fireEvent.click(button);
-    expect(useUIStore.getState().panels.agentChat.visible).toBe(false);
+    const editor = await view.findByTestId("shared-editor");
+    expect(editor.getAttribute("data-platform")).toBe("desktop");
+    expect(editor.getAttribute("data-drag")).toBe("true");
+    expect(view.getByRole("button", { name: "Video Export" })).toBeTruthy();
+    expect(view.getByRole("button", { name: "Settings" })).toBeTruthy();
+    // The separate desktop title bar is only used on the start screen.
+    expect(view.queryByText("OpenReel")).toBeNull();
   });
 
   it("keeps settings reachable from the desktop title bar", () => {

@@ -27,8 +27,10 @@ const calculateIsDark = (mode: ThemeMode): boolean => {
 export const useThemeStore = create<ThemeState>()(
   persist(
     (set, get) => ({
-      mode: "light",
-      isDark: false,
+      // DLT Cafe: dark by default in browser and desktop (one theme system;
+      // the rail's theme button still switches light/dark/auto).
+      mode: "dark",
+      isDark: true,
 
       setMode: (mode: ThemeMode) => {
         const isDark = calculateIsDark(mode);

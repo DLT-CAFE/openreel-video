@@ -1,10 +1,10 @@
 import type { JSX } from "react";
-import { useEffect } from "react";
+import { lazy, Suspense, useEffect } from "react";
 import { DesktopTitleBar } from "./shell/DesktopTitleBar";
-import { Workspace } from "./shell/Workspace";
+import { WindowControls } from "./shell/WindowControls";
+import { EditorChromeProvider, type EditorChrome } from "../components/editor/shell/editor-chrome"; // DLT Cafe
 import { DesktopStartScreen } from "./start/DesktopStartScreen";
 import { DesktopExportButton } from "./editor/DesktopExportButton";
-import { ReviewTitleButton } from "../components/editor/review/ReviewTitleButton"; // DLT Cafe
 import { ToastContainer } from "../components/Toast"; // DLT Cafe
 import { EditorBootstrapGate } from "./editor/EditorBootstrapGate";
 import { ErrorBoundary } from "../components/ErrorBoundary";
@@ -15,12 +15,18 @@ import { installRendererCrashHandlers, reportRendererCrash } from "./crash-repor
 import { installMcpListener } from "../services/agent/mcp-listener";
 import { getLiveEditorHost } from "../services/agent/host-singleton";
 import { createExportJobRunner } from "../services/agent/export-job-runner";
-import { useUIStore } from "../stores/ui-store";
 import { useSettingsStore } from "../stores/settings-store";
 import { SettingsDialog } from "../components/editor/settings/SettingsDialog";
-import { ToolcraftButton as Button } from "@openreel/ui";
-import { Settings, Sparkles } from "@/icons/lucide-compat";
-import "./theme/desktop-theme.css";
+import { ToolcraftButton as Button, ToolcraftIconButton as IconButton } from "@openreel/ui";
+import { Settings } from "@/icons/lucide-compat";
+// DLT Cafe: desktop now uses the shared theme tokens (index.css, dark by
+// default via theme-store) instead of forcing the Resolve palette in
+// ./theme/desktop-theme.css, which stays available as a future palette option.
+
+// DLT Cafe: desktop uses the same editor layout as the browser app.
+const EditorInterface = lazy(() =>
+  import("../components/editor/EditorInterface").then((m) => ({ default: m.EditorInterface })),
+);
 
 function detectPlatform(): string {
   if (typeof navigator !== "undefined" && /Mac/i.test(navigator.platform)) return "darwin";
@@ -31,10 +37,6 @@ function detectPlatform(): string {
 export function DesktopApp(): JSX.Element {
   const platform = detectPlatform();
   const hasProject = useProjectStore((state) => state.hasOpenProject);
-  const agentChatVisible = useUIStore(
-    (state) => state.panels.agentChat?.visible ?? false,
-  );
-  const togglePanel = useUIStore((state) => state.togglePanel);
 
   // Drive native-menu actions into the app: undo/redo hit the project store
   // directly; new/open/export are broadcast as events for the relevant UI to
@@ -92,31 +94,40 @@ export function DesktopApp(): JSX.Element {
     };
   }, []);
 
+  const chrome: EditorChrome = {
+    platform: "desktop",
+    dragRegion: true,
+    leadingInset: platform === "darwin" ? 84 : 12,
+    exportSlot: <DesktopExportButton />,
+    trailingSlot: (
+      <>
+        <IconButton
+          label="Settings"
+          variant="ghost"
+          size="sm"
+          icon={<Settings size={16} aria-hidden />}
+          onClick={() => useSettingsStore.getState().openSettings()}
+          className="ml-2"
+        />
+        <WindowControls platform={platform} />
+      </>
+    ),
+  };
+
   return (
     <div className="openreel-desktop isolate flex h-screen w-screen flex-col overflow-hidden bg-bg text-fg">
-      <DesktopTitleBar platform={platform}>
-        {hasProject ? (
+      {!hasProject ? (
+        <DesktopTitleBar platform={platform}>
           <Button
-            label="AI Editor"
-            variant={agentChatVisible ? "primary" : "secondary"}
+            label="Settings"
+            variant="secondary"
             size="sm"
-            icon={<Sparkles size={15} aria-hidden />}
-            onClick={() => togglePanel("agentChat")}
+            icon={<Settings size={15} aria-hidden />}
+            onClick={() => useSettingsStore.getState().openSettings()}
             className="mr-2"
-            aria-pressed={agentChatVisible}
           />
-        ) : null}
-        {hasProject ? <ReviewTitleButton /> : null}
-        {hasProject ? <DesktopExportButton /> : null}
-        <Button
-          label="Settings"
-          variant="secondary"
-          size="sm"
-          icon={<Settings size={15} aria-hidden />}
-          onClick={() => useSettingsStore.getState().openSettings()}
-          className="mr-2"
-        />
-      </DesktopTitleBar>
+        </DesktopTitleBar>
+      ) : null}
       <div className="min-h-0 flex-1">
         <ErrorBoundary
           onError={(error, info) =>
@@ -130,7 +141,11 @@ export function DesktopApp(): JSX.Element {
         >
           {hasProject ? (
             <EditorBootstrapGate>
-              <Workspace />
+              <EditorChromeProvider value={chrome}>
+                <Suspense fallback={<div className="grid h-full place-items-center text-sm text-fg-muted">Loading…</div>}>
+                  <EditorInterface />
+                </Suspense>
+              </EditorChromeProvider>
             </EditorBootstrapGate>
           ) : (
             <DesktopStartScreen />
@@ -138,7 +153,7 @@ export function DesktopApp(): JSX.Element {
         </ErrorBoundary>
       </div>
       <UpdateBanner />
-      <SettingsDialog />
+      {!hasProject ? <SettingsDialog /> : null}{/* the editor's top bar mounts its own */}
       <ToastContainer />{/* DLT Cafe: desktop shell had no toast host, so notifications were invisible */}
     </div>
   );
