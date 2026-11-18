@@ -373,6 +373,125 @@ DLTCAFE_TOOLS.push(
   },
 );
 
+// ---- Creator styles (the content creator pack, read live from disk) ----------
+// OpenReel doesn't re-implement the styles: Claude runs the style's skill (paths
+// below), then loads the result and opens it for review.
+
+const STYLE_JOB_STATUSES = ["waiting", "in-progress", "in-review", "done", "cancelled"];
+
+function styleSummary(s: Record<string, unknown>) {
+  const tags = Array.isArray(s.tags) ? (s.tags as string[]) : [];
+  return { id: s.id, name: s.name, kind: s.kind, blurb: s.blurb, bestFor: s.cues, tags };
+}
+
+DLTCAFE_TOOLS.push(
+  {
+    name: "list_creator_styles",
+    domain: "read",
+    title: "List creator styles",
+    description:
+      "The creator pack's editing styles available on this computer (read live, so new ones appear without a rebuild): id, name, kind (reel | long | clips | caption), blurb, bestFor (what footage suits it) and tags. Optional filters: kind, tag, query (words matched against name, blurb, bestFor, tags). Use get_creator_style for one style's skill and preview paths.",
+    inputSchema: obj({ kind: str, tag: str, query: str }),
+    readOnly: true,
+    destructive: false,
+    expensive: false,
+    handler: async (args, host) => {
+      if (typeof host.getCreatorStyles !== "function") return fail("Creator styles aren't available in this host", "UNSUPPORTED");
+      const index = await host.getCreatorStyles();
+      if (!index.ok) return fail(index.error ?? "No creator styles found", "NOT_FOUND");
+      const q = typeof args.query === "string" ? args.query.toLowerCase().split(/\s+/).filter(Boolean) : [];
+      const list = index.styles
+        .filter((s) => (typeof args.kind === "string" && args.kind ? s.kind === args.kind : true))
+        .filter((s) => (typeof args.tag === "string" && args.tag ? Array.isArray(s.tags) && (s.tags as string[]).includes(args.tag) : true))
+        .filter((s) => {
+          if (!q.length) return true;
+          const hay = JSON.stringify([s.id, s.name, s.blurb, s.cues, s.tags, s.aliases, s.lends]).toLowerCase();
+          return q.every((w) => hay.includes(w));
+        })
+        .map(styleSummary);
+      return ok(`${list.length} creator style(s) from ${index.root}`, { root: index.root, styles: list });
+    },
+  },
+  {
+    name: "get_creator_style",
+    domain: "read",
+    title: "Get creator style",
+    description:
+      "One creator style in full: catalog fields (layouts, caption, hook, lends, tags...), skillPath (its SKILL.md: read and follow it to make the edit), and paths to its poster, looping preview video and live HTML sample when it has one.",
+    inputSchema: obj({ id: str }, ["id"]),
+    readOnly: true,
+    destructive: false,
+    expensive: false,
+    handler: async (args, host) => {
+      if (typeof host.getCreatorStyles !== "function") return fail("Creator styles aren't available in this host", "UNSUPPORTED");
+      const index = await host.getCreatorStyles();
+      const id = String(args.id ?? "");
+      const style = index.styles.find((s) => s.id === id || (Array.isArray(s.aliases) && (s.aliases as string[]).includes(id)));
+      if (!style) return fail(`No creator style "${id}"`, "NOT_FOUND");
+      return ok(`${style.name} (${style.kind})`, style);
+    },
+  },
+  {
+    name: "start_style_job",
+    domain: "project",
+    title: "Start a creator style job",
+    description:
+      "Set up an edit in a creator style: creates a new project with the style's canvas (9:16 for reels/clips/captions, 16:9 for long form), imports the footage (absolute paths inside an approved folder; desktop app), tags the project with the style and records a job the Collaborate panel shows. Then run the style's skill (get_creator_style skillPath) on the footage, register the preview with register_review.py --id <job id> --style <style id> (or import_portable_edit), and call update_style_job.",
+    inputSchema: obj({ styleId: str, paths: { type: "array", items: str }, name: str, notes: str }, ["styleId", "paths"]),
+    readOnly: false,
+    destructive: false,
+    expensive: true,
+    handler: async (args, host) => {
+      if (typeof host.startStyleJob !== "function") return fail("Style jobs aren't available in this host", "UNSUPPORTED");
+      const paths = Array.isArray(args.paths) ? (args.paths as unknown[]).filter((p): p is string => typeof p === "string" && p.trim() !== "") : [];
+      if (!paths.length) return fail("paths: give at least one footage file", "INVALID_PARAMS");
+      const job = await host.startStyleJob({
+        styleId: String(args.styleId ?? ""),
+        paths,
+        ...(typeof args.name === "string" ? { name: args.name } : {}),
+        ...(typeof args.notes === "string" ? { notes: args.notes } : {}),
+      });
+      return ok(`Style job ${job.id} ready: project "${job.projectName}" with ${paths.length} clip(s) in ${job.styleName}`, job);
+    },
+  },
+  {
+    name: "list_style_jobs",
+    domain: "read",
+    title: "List style jobs",
+    description:
+      "Creator style jobs started from OpenReel (\"Use this style\") or start_style_job, newest first: id, styleId, styleName, project, footage (paths, or file names when picked in the browser), notes, status (waiting | in-progress | in-review | done | cancelled). Pick up 'waiting' jobs: run the style's skill on the footage.",
+    inputSchema: obj({ status: { type: "string", enum: STYLE_JOB_STATUSES } }),
+    readOnly: true,
+    destructive: false,
+    expensive: false,
+    handler: async (args, host) => {
+      if (typeof host.listStyleJobs !== "function") return fail("Style jobs aren't available in this host", "UNSUPPORTED");
+      const jobs = (await host.listStyleJobs()).filter((j) => (typeof args.status === "string" ? j.status === args.status : true));
+      return ok(`${jobs.length} style job(s)`, jobs);
+    },
+  },
+  {
+    name: "update_style_job",
+    domain: "project",
+    title: "Update style job",
+    description: "Move a style job along: status (in-progress | in-review | done | cancelled), reviewId (the register_review.py --id) and a short message the Collaborate panel shows.",
+    inputSchema: obj({ jobId: str, status: { type: "string", enum: STYLE_JOB_STATUSES }, reviewId: str, message: str }, ["jobId"]),
+    readOnly: false,
+    destructive: false,
+    expensive: false,
+    handler: async (args, host) => {
+      if (typeof host.updateStyleJob !== "function") return fail("Style jobs aren't available in this host", "UNSUPPORTED");
+      const job = await host.updateStyleJob(String(args.jobId ?? ""), {
+        ...(typeof args.status === "string" ? { status: args.status } : {}),
+        ...(typeof args.reviewId === "string" ? { reviewId: args.reviewId } : {}),
+        ...(typeof args.message === "string" ? { message: args.message } : {}),
+      });
+      if (!job) return fail(`No style job "${String(args.jobId)}"`, "NOT_FOUND");
+      return ok(`Job ${job.id} is ${job.status}`, job);
+    },
+  },
+);
+
 /** Longest wait per call; stays under the desktop bridge's 120 s per-call limit. */
 export const REVIEW_WAIT_MAX_SEC = 110;
 const REVIEW_WAIT_DEFAULT_SEC = 100;

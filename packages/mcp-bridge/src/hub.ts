@@ -11,7 +11,7 @@
 // still gated inside the tab by "Trusted local".
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from "node:http";
 import { timingSafeEqual } from "node:crypto";
-import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
+import { createReadStream, readFileSync, statSync, writeFileSync, mkdirSync } from "node:fs";
 import path from "node:path";
 import { WebSocketServer, type WebSocket } from "ws";
 import { handleMcpMessage, type JsonRpcMessage, type McpToolDef, type McpToolProvider, type McpToolResult } from "./core";
@@ -29,6 +29,7 @@ import {
 } from "./protocol";
 import type { HubState } from "./state";
 import { toolsCacheFile } from "./paths";
+import { buildStylesIndex, contentType, readStylesRoot, resolveStyleFile, writeStylesRoot } from "./styles";
 
 const MAX_BODY_BYTES = 4 * 1024 * 1024;
 const HELLO_TIMEOUT_MS = 5_000;
@@ -191,6 +192,61 @@ export function startHub(options: HubOptions): Promise<RunningHub> {
   };
   const serverInfo = { name: "openreel", version: `${BRIDGE_VERSION}-web` };
 
+  const serveStyles = async (req: IncomingMessage, res: ServerResponse, key: string, rel: string, origin: string | undefined): Promise<void> => {
+    const headers: Record<string, string> = {
+      "Cross-Origin-Resource-Policy": "cross-origin",
+      "Cache-Control": "no-store",
+      ...(origin && origins.has(origin) ? { "Access-Control-Allow-Origin": origin, Vary: "Origin" } : {}),
+    };
+    if (req.method === "OPTIONS") {
+      res.writeHead(204, { ...headers, "Access-Control-Allow-Methods": "GET, POST", "Access-Control-Allow-Headers": "Content-Type" }).end();
+      return;
+    }
+    if (!tokenMatches(key, state.pairToken)) {
+      sendJson(res, 401, { error: "Pair this tab first (Settings > MCP)" }, headers);
+      return;
+    }
+    if (rel === "index.json" && req.method === "GET") {
+      sendJson(res, 200, buildStylesIndex(), headers);
+      return;
+    }
+    if (rel === "config" && req.method === "POST") {
+      // Only a paired page from an allowed origin may change the folder.
+      if (!origin || !origins.has(origin)) {
+        sendJson(res, 403, { error: "Forbidden origin" }, headers);
+        return;
+      }
+      try {
+        const body = JSON.parse(await readBody(req)) as { root?: string };
+        const err = writeStylesRoot(String(body.root ?? ""));
+        sendJson(res, err ? 400 : 200, err ? { error: err } : { ok: true, root: readStylesRoot() }, headers);
+      } catch {
+        sendJson(res, 400, { error: "Bad request" }, headers);
+      }
+      return;
+    }
+    const file = req.method === "GET" ? resolveStyleFile(rel) : null;
+    if (!file) {
+      sendJson(res, 404, { error: "Not found" }, headers);
+      return;
+    }
+    const size = statSync(file).size;
+    const range = /^bytes=(\d*)-(\d*)$/.exec(String(req.headers.range ?? ""));
+    if (range && (range[1] || range[2])) {
+      const start = range[1] ? Number(range[1]) : Math.max(0, size - Number(range[2]));
+      const end = range[1] && range[2] ? Math.min(Number(range[2]), size - 1) : size - 1;
+      if (start >= size || start > end) {
+        res.writeHead(416, { ...headers, "Content-Range": `bytes */${size}` }).end();
+        return;
+      }
+      res.writeHead(206, { ...headers, "Content-Type": contentType(file), "Accept-Ranges": "bytes", "Content-Range": `bytes ${start}-${end}/${size}`, "Content-Length": String(end - start + 1) });
+      createReadStream(file, { start, end }).pipe(res);
+      return;
+    }
+    res.writeHead(200, { ...headers, "Content-Type": contentType(file), "Accept-Ranges": "bytes", "Content-Length": String(size) });
+    createReadStream(file).pipe(res);
+  };
+
   const server = createServer((req, res) => {
     void (async () => {
       if (!isLoopbackHost(req.headers.host)) {
@@ -204,6 +260,13 @@ export function startHub(options: HubOptions): Promise<RunningHub> {
         // Lets the web app see that the bridge is running. No secrets here.
         const cors: Record<string, string> = origin && origins.has(origin) ? { "Access-Control-Allow-Origin": origin, Vary: "Origin" } : {};
         sendJson(res, 200, { ok: true, name: "openreel-mcp-hub", version: BRIDGE_VERSION, tabs: tabs.length, cliPath: options.cliPath }, cors);
+        return;
+      }
+      // DLT Cafe: creator styles for a paired browser tab: /styles/k/<pairing code>/<index.json|media/…|skills/…>.
+      // The code sits in the path so relative URLs inside a live HTML sample keep it.
+      const sm = /^\/styles\/k\/([^/]+)\/(.*)$/.exec(url.pathname);
+      if (sm) {
+        await serveStyles(req, res, decodeURIComponent(sm[1]), sm[2], origin);
         return;
       }
       if (url.pathname !== HUB_MCP_PATH || req.method !== "POST") {

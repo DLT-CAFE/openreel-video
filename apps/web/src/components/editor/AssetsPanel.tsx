@@ -32,6 +32,7 @@ import { LinkedMediaBanner } from "./media-import/LinkedMediaBanner"; // DLT Caf
 import { useEditorLayoutStore } from "./shell/layout-store"; // DLT Cafe M2
 import { DockGrip } from "./shell/dock-drag"; // DLT Cafe M6
 import { ChevronsLeft } from "lucide-react"; // DLT Cafe M2
+import { StyleGallery } from "../dltcafe/styles/StyleGallery"; // DLT Cafe: creator styles
 import { pickMediaFilesWithHandles, supportsOpenFilePicker } from "../../services/dltcafe/linked-media"; // DLT Cafe
 import { ToolcraftButton as Button } from "@openreel/ui";
 import { ToolcraftIconButton as IconButton } from "@openreel/ui";
@@ -65,7 +66,8 @@ type AssetsTab =
   | "transitions"
   | "ai"
   | "recipes"
-  | "templates";
+  | "templates"
+  | "styles"; // DLT Cafe: creator styles
 
 const ASSETS_TABS: ReadonlyArray<{
   value: AssetsTab;
@@ -111,6 +113,11 @@ const ASSETS_TABS: ReadonlyArray<{
     value: "templates",
     label: "Project Templates",
     description: "Load full-project starter layouts and presets.",
+  },
+  {
+    value: "styles",
+    label: "Styles",
+    description: "Creator editing styles: Claude edits your footage in one, then opens it for review.",
   },
 ] as const;
 
@@ -207,6 +214,7 @@ const TAB_ICONS: Record<AssetsTab, React.ElementType> = {
   ai: Sparkles,
   recipes: Wand2,
   templates: LayoutTemplate,
+  styles: Palette, // DLT Cafe
 };
 
 const PanelIconButton: React.FC<{
@@ -1573,6 +1581,12 @@ export const AssetsPanel: React.FC = () => {
         return (
           <div className="flex min-h-0 flex-1 flex-col border-t border-border/70 bg-background-secondary content-area-fix">
             <TemplatesTab />
+          </div>
+        );
+      case "styles": // DLT Cafe
+        return (
+          <div className="min-h-0 flex-1 overflow-y-auto border-t border-border/70 bg-bg-1 p-3" data-testid="styles-panel">
+            <StyleGallery compact columns="grid-cols-[repeat(auto-fill,minmax(120px,1fr))]" />
           </div>
         );
       default:

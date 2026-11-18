@@ -1,4 +1,4 @@
-import { contextBridge, ipcRenderer } from "electron";
+import { contextBridge, ipcRenderer, webUtils } from "electron";
 import { CHANNELS } from "../shared/channels";
 import type { McpBridgeRequest } from "../shared/mcp";
 
@@ -6,6 +6,10 @@ contextBridge.exposeInMainWorld("openreel", {
   platform: "desktop",
   publicOrigin: "https://app.openreel.video",
   probeHardware: () => ipcRenderer.invoke(CHANNELS.probeHardware, undefined),
+  // DLT Cafe: paths of picked files, so "Use this style" can hand real footage paths to Claude.
+  dltcafe: {
+    pathForFile: (file: File) => webUtils.getPathForFile(file),
+  },
   onMenuAction: (cb: (id: string) => void) => {
     const handler = (_event: unknown, id: string) => cb(id);
     ipcRenderer.on("openreel:menu:action", handler);

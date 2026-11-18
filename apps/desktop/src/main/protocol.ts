@@ -1,6 +1,7 @@
 import { protocol, net } from "electron";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
+import { handleStylesRequest, STYLES_PREFIX } from "./dltcafe-styles"; // DLT Cafe: creator styles
 
 const SCHEME = "app";
 
@@ -25,6 +26,7 @@ export function handleAppScheme(rendererRoot: string): void {
     let pathname = decodeURIComponent(url.pathname);
     if (pathname === "/" || pathname === "") pathname = "/index.html";
     if (pathname === "/motion") pathname = "/index.html";
+    if (pathname.startsWith(STYLES_PREFIX)) return handleStylesRequest(request, pathname); // DLT Cafe
 
     const root = path.normalize(rendererRoot);
     const resolved = path.normalize(path.join(root, pathname));

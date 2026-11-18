@@ -274,6 +274,12 @@ export interface EditingHost {
    * reviewEventSince), or null after timeoutMs. Must not hold the host lock.
    */
   waitForReviewEvent?(since: string | undefined, timeoutMs: number): Promise<import("@openreel/review").ReviewEvent | null>;
+  /** DLT Cafe: the creator pack's editing styles, read live from the local pack folder. */
+  getCreatorStyles?(): Promise<{ root: string; ok: boolean; error?: string; styles: readonly Record<string, unknown>[] }>;
+  /** DLT Cafe: "Use this style" jobs (project + footage handed to Claude). */
+  listStyleJobs?(): Promise<readonly Record<string, unknown>[]>;
+  startStyleJob?(input: { styleId: string; paths: readonly string[]; name?: string; notes?: string }): Promise<Record<string, unknown>>;
+  updateStyleJob?(id: string, patch: { status?: string; reviewId?: string; message?: string }): Promise<Record<string, unknown> | null>;
   /**
    * Render a motion composition to a finished video file (mp4 / transparent
    * WebM / ProRes 4444 MOV). Optional because it needs the renderer-side motion

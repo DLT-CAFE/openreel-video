@@ -57,6 +57,8 @@ import { runMotionRenderQueue } from "../../motion/render-queue-runner";
 import { createMulticamHostBridge } from "./multicam-bridge";
 import { importLocalMediaFile } from "./dltcafe/local-media-import";
 import { importPortableEditFromPath } from "./dltcafe/portable-import";
+import { useCreatorStyles } from "../dltcafe/creator-styles"; // DLT Cafe
+import { startStyleJob, useStyleJobs } from "../dltcafe/style-jobs"; // DLT Cafe
 import { getReview, reviewEventSince, type ReviewEvent, type ReviewState } from "@openreel/review";
 
 const MIME_BY_EXT: Record<string, string> = {
@@ -327,6 +329,35 @@ export class LiveEditorHost implements EditingHost {
   async importPortableEditFromPath(jsonPath: string, options?: { mediaDir?: string }) {
     this.requireOpenProject();
     return importPortableEditFromPath(jsonPath, options);
+  }
+
+  /** DLT Cafe: creator styles, read live from the local pack folder. */
+  async getCreatorStyles() {
+    const index = await useCreatorStyles.getState().load(true);
+    if (!index) {
+      const { error } = useCreatorStyles.getState();
+      return { root: "", ok: false, error: error ?? "Creator styles unavailable", styles: [] };
+    }
+    return { root: index.root, ok: index.ok, ...(index.error ? { error: index.error } : {}), styles: index.styles as unknown as Record<string, unknown>[] };
+  }
+
+  /** DLT Cafe: "Use this style" jobs. */
+  async listStyleJobs() {
+    return useStyleJobs.getState().jobs as unknown as Record<string, unknown>[];
+  }
+
+  async startStyleJob(input: { styleId: string; paths: readonly string[]; name?: string; notes?: string }) {
+    return (await startStyleJob(input)) as unknown as Record<string, unknown>;
+  }
+
+  async updateStyleJob(id: string, patch: { status?: string; reviewId?: string; message?: string }) {
+    const allowed = ["waiting", "in-progress", "in-review", "done", "cancelled"];
+    const status = patch.status && allowed.includes(patch.status) ? (patch.status as import("../dltcafe/style-jobs").StyleJobStatus) : undefined;
+    return useStyleJobs.getState().update(id, {
+      ...(status ? { status } : {}),
+      ...(patch.reviewId ? { reviewId: patch.reviewId } : {}),
+      ...(patch.message ? { message: patch.message } : {}),
+    }) as unknown as Record<string, unknown> | null;
   }
 
   async exportMotionScene(

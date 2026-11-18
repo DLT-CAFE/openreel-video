@@ -1,6 +1,7 @@
 // DLT Cafe M3: the Collaborate panel body: one header (Chat | Notes, dock/float,
 // close) over the existing AI chat and the review notes.
 import React, { Suspense, lazy, useEffect, useMemo } from "react";
+import { StyleJobsStrip } from "../../dltcafe/styles/StyleJobsStrip"; // DLT Cafe
 import { MessageSquareText, PanelRightClose, PictureInPicture2, Sparkles, X } from "lucide-react";
 import { getReview } from "@openreel/review";
 import { useProjectStore } from "../../../stores/project-store";
@@ -74,9 +75,14 @@ export const CollabPanel: React.FC<{ onHeaderPointerDown?: (e: React.PointerEven
       </p>
       <div className="min-h-0 flex-1" role="tabpanel">
         {tab === "chat" ? (
-          <Suspense fallback={<div className="grid h-full place-items-center text-fg-muted">Loading AI chat…</div>}>
-            <ChatPanel />
-          </Suspense>
+          <div className="flex h-full min-h-0 flex-col">
+            <StyleJobsStrip />{/* DLT Cafe: creator style jobs for this project */}
+            <div className="min-h-0 flex-1">
+              <Suspense fallback={<div className="grid h-full place-items-center text-fg-muted">Loading AI chat…</div>}>
+                <ChatPanel />
+              </Suspense>
+            </div>
+          </div>
         ) : (
           <ReviewPanel />
         )}

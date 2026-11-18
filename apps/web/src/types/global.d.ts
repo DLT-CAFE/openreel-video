@@ -261,6 +261,10 @@ declare global {
       crash: {
         report(payload: { message: string; stack?: string; type?: string; context?: unknown }): void;
       };
+      /** DLT Cafe: the on-disk path of a picked or dropped file (Electron webUtils). */
+      dltcafe?: {
+        pathForFile(file: File): string;
+      };
       mcp?: {
         onRequest(
           handler: (req: {
