@@ -51,6 +51,7 @@ import { useUIStore } from "../../stores/ui-store";
 import { toast } from "../../stores/notification-store";
 import { useEngineStore } from "../../stores/engine-store";
 import { getPlaybackBridge } from "../../bridges/playback-bridge";
+import { ReviewNotePins } from "./review/ReviewNotePins"; // DLT Cafe
 import { trackHasAudioItems, trackHasVisualItems } from "@openreel/core";
 import {
   deleteTimelineItem,
@@ -1706,6 +1707,8 @@ export const Timeline: React.FC = () => {
                   onUpdate={updateMarker}
                 />
               ))}
+
+              <ReviewNotePins pixelsPerSecond={pixelsPerSecond} scrollX={scrollX} />
 
               {snapIndicatorTime !== null && (
                 <div

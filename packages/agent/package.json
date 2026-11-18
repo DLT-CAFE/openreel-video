@@ -25,6 +25,7 @@
     "vitest": "^1.6.0"
   },
   "dependencies": {
+    "@openreel/review": "workspace:*",
     "@openreel/core": "workspace:*",
     "@openreel/creation-schema": "workspace:*"
   }

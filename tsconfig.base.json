@@ -31,6 +31,8 @@
       "@openreel/creation-schema/*": ["./packages/creation-schema/src/*"],
       "@openreel/image-core": ["./packages/image-core/src/index.ts"],
       "@openreel/image-core/*": ["./packages/image-core/src/*"],
+      "@openreel/review": ["./packages/review/src/index.ts"],
+      "@openreel/review/*": ["./packages/review/src/*"],
       "@openreel/ui": ["./packages/ui/src/index.ts"],
       "@openreel/ui/*": ["./packages/ui/src/*"]
     }

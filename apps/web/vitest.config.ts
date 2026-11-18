@@ -46,6 +46,7 @@ export default defineConfig({
       "@": path.resolve(__dirname, "./src"),
       "@openreel/core": path.resolve(__dirname, "../../packages/core/src"),
       "@openreel/agent": path.resolve(__dirname, "../../packages/agent/src"),
+      "@openreel/review": path.resolve(__dirname, "../../packages/review/src"), // DLT Cafe
     },
   },
 });

@@ -16,6 +16,7 @@
     "clean": "rm -rf dist node_modules/.vite && find src -name '*.js' -o -name '*.js.map' -o -name '*.d.ts' -o -name '*.d.ts.map' | xargs rm -f 2>/dev/null || true"
   },
   "dependencies": {
+    "@openreel/review": "workspace:*",
     "@astryxdesign/core": "^0.1.1",
     "@astryxdesign/theme-neutral": "^0.1.1",
     "@gsap/react": "^2.1.2",

@@ -29,6 +29,7 @@ import {
   startMoGraphTour,
   MOGRAPH_TOUR_KEY,
 } from "./tour";
+import { ReviewRailButton } from "./review/ReviewRailButton"; // DLT Cafe
 
 const RailButton: React.FC<{
   label: string;
@@ -137,6 +138,7 @@ export const EditorActionRail: React.FC = () => {
         onClick={() => togglePanel("agentChat")}
         active={Boolean(panels.agentChat?.visible)}
       />
+      <ReviewRailButton />
       <RailButton
         label="Project JSON / Comments"
         icon="curlybraces"

@@ -7,6 +7,8 @@ import { EditorActionRail } from "./EditorActionRail";
 import { AssetsPanel } from "./AssetsPanel";
 import { Preview } from "./Preview";
 import { InspectorPanel } from "./InspectorPanel";
+import { ReviewPanel } from "./review/ReviewPanel"; // DLT Cafe
+import { useReviewUIStore } from "./review/review-ui-store"; // DLT Cafe
 import { Timeline } from "./Timeline";
 import { KeyframeEditorPanel } from "./KeyframeEditorPanel";
 import { AudioMixer } from "../audio-mixer";
@@ -199,6 +201,8 @@ export const EditorInterface: React.FC = () => {
   const [timelineVh, setTimelineVh] = useState(DEFAULT_TIMELINE_VH);
 
   const chatVisible = panels.agentChat?.visible ?? false;
+  const reviewOpen = useReviewUIStore((s) => s.open); // DLT Cafe
+  const setReviewOpen = useReviewUIStore((s) => s.setOpen);
   useEffect(() => {
     if (chatVisible) {
       setHasOpenedChat(true);
@@ -420,7 +424,7 @@ export const EditorInterface: React.FC = () => {
           style={{ gridArea: "inspector" }}
         >
           <PanelErrorBoundary name="Inspector">
-            <InspectorPanel />
+            {reviewOpen ? <ReviewPanel onClose={() => setReviewOpen(false)} /> : <InspectorPanel />}
           </PanelErrorBoundary>
         </div></>}
 

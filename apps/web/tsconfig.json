@@ -13,6 +13,8 @@
       "@openreel/core/*": ["../../packages/core/src/*"],
       "@openreel/agent": ["../../packages/agent/src/index.ts"],
       "@openreel/agent/*": ["../../packages/agent/src/*"],
+      "@openreel/review": ["../../packages/review/src/index.ts"],
+      "@openreel/review/*": ["../../packages/review/src/*"],
       "@openreel/ui": ["../../packages/ui/src/index.ts"],
       "@openreel/ui/*": ["../../packages/ui/src/*"]
     }

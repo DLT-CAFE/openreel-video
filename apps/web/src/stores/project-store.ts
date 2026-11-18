@@ -58,6 +58,7 @@ import { createMarkerSlice } from "./project/marker-slice";
 import { createSubtitleSlice } from "./project/subtitle-slice";
 import { createTrackSlice } from "./project/track-slice";
 import { createMediaSlice } from "./project/media-slice";
+import { createReviewSlice, type ReviewSlice } from "./project/review-slice"; // DLT Cafe
 import { createProjectStoreHelpers } from "./project/store-helpers";
 import { createTextGraphicsSlice } from "./project/text-graphics-slice";
 import { createHistorySlice } from "./project/history-slice";
@@ -125,7 +126,7 @@ import { planRecoverMotionScene3DLayer } from "../motion/creation-recovery";
  *
  * All async methods return ActionResult with success status and error details.
  */
-export interface ProjectState {
+export interface ProjectState extends ReviewSlice {
   // Project data
   project: Project;
   hasOpenProject: boolean;
@@ -1909,6 +1910,7 @@ export const useProjectStore = create<ProjectState>()(
 
       // Media library actions
       ...createMediaSlice(set, get),
+      ...createReviewSlice(set, get), // DLT Cafe: review notes
 
       addPlaceholderMedia: (item: MediaItem) => {
         const { project } = get();

@@ -262,6 +262,14 @@ export interface EditingHost {
     options?: { mediaDir?: string },
   ): Promise<import("./registry-dltcafe").PortableEditImportResult>;
   /**
+   * DLT Cafe review layer (packages/review). Applies `update` to the open
+   * project's review notes and stores the result with the project (outside
+   * undo history). Read-only tools fall back to getProject().review.
+   */
+  updateReview?(
+    update: (review: import("@openreel/review").ReviewState, project: Project) => import("@openreel/review").ReviewState,
+  ): import("@openreel/review").ReviewState;
+  /**
    * Render a motion composition to a finished video file (mp4 / transparent
    * WebM / ProRes 4444 MOV). Optional because it needs the renderer-side motion
    * export pipeline that only the live/desktop web host provides — headless
