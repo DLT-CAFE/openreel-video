@@ -7658,7 +7658,8 @@ export const Preview: React.FC = () => {
       className="w-full h-full min-h-0 min-w-0 bg-stage-bg flex flex-col relative group overflow-hidden outline-none"
     >
       {/* ── Panel bar header (mockup: 'Player') ───────────────── */}
-      {!isMaximized && !isFullscreen && (
+      {/* DLT Cafe M5: hidden for portrait projects so the frame gets the height */}
+      {!isMaximized && !isFullscreen && settings.width >= settings.height && (
         <div className="flex items-center px-3.5 py-2 border-b border-border bg-bg-1 gap-2.5 min-h-[38px] shrink-0">
           <Text type="label" color="primary" weight="semibold" className="text-[13px] tracking-tight text-fg m-0">Player</Text>
           <div className="ml-auto flex items-center gap-1">
@@ -7686,7 +7687,7 @@ export const Preview: React.FC = () => {
       <div
         ref={videoAreaRef}
         className={`flex-1 min-h-0 min-w-0 relative flex items-center justify-center bg-bg-1 transition-all duration-300 ${
-          isMaximized || isFullscreen ? "p-0" : "p-[18px]"
+          isMaximized || isFullscreen ? "p-0" : settings.height > settings.width ? "p-2" : "p-[18px]" /* DLT Cafe M5 */
         } ${zoomLevel > 1 ? "overflow-auto" : ""}`}
         onMouseMove={interactionMode !== "none" ? handleMouseMove : undefined}
         onMouseUp={handleMouseUp}

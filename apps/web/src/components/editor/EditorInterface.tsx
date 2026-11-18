@@ -35,6 +35,7 @@ const ChatPanel = React.lazy(() =>
 // from the mockup is `1fr var(--tl-height)` rows — by default
 // timeline is 58vh which leaves the top row with ~38–42vh of stage.
 const DEFAULT_TIMELINE_VH = 42;
+const PORTRAIT_TIMELINE_VH = 28; // DLT Cafe M5
 const MIN_TIMELINE_VH = 22;
 const MAX_TIMELINE_VH = 70;
 // Compact mode: timeline takes most of the height, leaving a small preview.
@@ -202,7 +203,15 @@ export const EditorInterface: React.FC = () => {
   const [mediaWidth, setMediaWidth] = useState(() => window.innerWidth < 1600 ? MIN_MEDIA_W : DEFAULT_MEDIA_W);
   const [inspectorWidth, setInspectorWidth] = useState(() => window.innerWidth < 1600 ? MIN_INSPECTOR_W : DEFAULT_INSPECTOR_W);
   const [chatWidth, setChatWidth] = useState(DEFAULT_CHAT_W);
-  const [timelineVh, setTimelineVh] = useState(DEFAULT_TIMELINE_VH);
+  const [landscapeTimelineVh, setLandscapeTimelineVh] = useState(DEFAULT_TIMELINE_VH);
+  // DLT Cafe M5: portrait (9:16, 4:5 …) projects get a tall stage: the timeline
+  // starts shorter and keeps its own height, so the vertical frame fills the viewer.
+  const portrait = useProjectStore((state) => state.project.settings.height > state.project.settings.width);
+  const [portraitTimelineVh, setPortraitTimelineVh] = useState(PORTRAIT_TIMELINE_VH);
+  const timelineVh = portrait ? portraitTimelineVh : landscapeTimelineVh;
+  const portraitRef = useRef(portrait);
+  portraitRef.current = portrait;
+  const setTimelineVh = useCallback((vh: number) => (portraitRef.current ? setPortraitTimelineVh : setLandscapeTimelineVh)(vh), []);
 
   const chatVisible = panels.agentChat?.visible ?? false;
   useReviewShortcuts(); // DLT Cafe: N adds a review note
