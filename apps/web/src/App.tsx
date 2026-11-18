@@ -136,7 +136,10 @@ function App() {
 
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
-      if (e.key === "Escape" && route !== "editor") {
+      // DLT Cafe: on the home screen Escape first closes its menus, dialogs and fields.
+      const busy = e.defaultPrevented || !!document.querySelector('[role="dialog"],[role="menu"]') ||
+        (e.target instanceof HTMLElement && !!e.target.closest("input,textarea,select,[contenteditable=true]"));
+      if (e.key === "Escape" && route !== "editor" && !busy) {
         navigate("editor");
       }
       if ((e.metaKey || e.ctrlKey) && e.key === "k") {

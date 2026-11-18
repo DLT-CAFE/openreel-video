@@ -82,7 +82,7 @@ describe("DesktopApp", () => {
   it("shows the start screen and hides the workspace when no project is open", () => {
     mockHasProject(false);
     const { getByText, queryByTestId } = render(<DesktopApp />);
-    expect(getByText("New Project")).toBeTruthy();
+    expect(getByText("Start something new")).toBeTruthy(); // DLT Cafe: shared home screen
     expect(queryByTestId("shared-editor")).toBeNull();
   });
 

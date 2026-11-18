@@ -5,18 +5,20 @@
 // desktop start screen with the project in its recent list.
 import { useProjectStore } from "../../../stores/project-store";
 import type { EditorChrome } from "./editor-chrome";
+import { captureProjectThumbnail } from "../../../services/dltcafe/project-library";
 
 export async function goHome(
   chrome: Pick<EditorChrome, "platform">,
   navigate: (route: "welcome") => void,
 ): Promise<void> {
+  const open = useProjectStore.getState();
+  if (open.hasOpenProject) captureProjectThumbnail(open.project.id); // picture for the home screen's card
   if (chrome.platform !== "desktop") {
     navigate("welcome");
     return;
   }
-  const store = useProjectStore.getState();
   try {
-    await store.forceSave();
+    await open.forceSave();
   } catch (error) {
     // Keep the project open rather than risk losing changes.
     console.error("[goHome] save before closing failed:", error);

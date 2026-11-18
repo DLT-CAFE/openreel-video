@@ -468,6 +468,69 @@ export class AutoSaveManager {
     }
   }
 
+  // ---- DLT Cafe: project library (home screen) ------------------------------
+  /** Latest save of every project, with its parsed project (null if unreadable). No "restored" event. */
+  async listLatestProjects(): Promise<Array<{ meta: AutoSaveMetadata; project: Project | null }>> {
+    await this.initialize();
+    const latest = new Map<string, AutoSaveRecord>();
+    for (const r of await this.getAllSaves()) {
+      const cur = latest.get(r.projectId);
+      if (!cur || cur.timestamp < r.timestamp) latest.set(r.projectId, r);
+    }
+    return [...latest.values()]
+      .sort((a, b) => b.timestamp - a.timestamp)
+      .map((r) => {
+        let project: Project | null = null;
+        try {
+          project = JSON.parse(r.data) as Project;
+        } catch {
+          project = null;
+        }
+        return {
+          meta: { id: r.id, projectId: r.projectId, projectName: r.projectName, timestamp: r.timestamp, slot: r.slot, isRecovery: true },
+          project,
+        };
+      });
+  }
+
+  /** Renames every save of a project (name shown in lists and inside the project). */
+  async renameProjectSaves(projectId: string, name: string): Promise<void> {
+    await this.initialize();
+    for (const r of (await this.getAllSaves()).filter((x) => x.projectId === projectId)) {
+      let data = r.data;
+      try {
+        data = JSON.stringify({ ...(JSON.parse(r.data) as Project), name });
+      } catch {
+        // keep data as is
+      }
+      await this.saveRecord({ ...r, projectName: name, data });
+    }
+  }
+
+  /** Copies a project's latest save as a new project. Returns the new project id. */
+  async duplicateProjectSave(projectId: string, name: string, newId: string): Promise<string | null> {
+    await this.initialize();
+    const latest = (await this.getAllSaves()).filter((x) => x.projectId === projectId).sort((a, b) => b.timestamp - a.timestamp)[0];
+    if (!latest) return null;
+    const project = JSON.parse(latest.data) as Project;
+    const now = Date.now();
+    await this.saveRecord({
+      id: `${newId}-slot-0`,
+      projectId: newId,
+      projectName: name,
+      timestamp: now,
+      slot: 0,
+      data: JSON.stringify({ ...project, id: newId, name, createdAt: now, modifiedAt: now }),
+    });
+    return newId;
+  }
+
+  /** Permanently removes every save of a project (callers confirm first). */
+  async deleteProjectSaves(projectId: string): Promise<void> {
+    await this.initialize();
+    await this.clearProjectSaves(projectId);
+  }
+
   async clearAllSaves(): Promise<void> {
     if (!this.db) return;
 
