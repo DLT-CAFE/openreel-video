@@ -117,3 +117,41 @@ describe("reviewEventSince", () => {
     expect(reviewEventSince(state, sent!.at)?.event).toBe("approve");
   });
 });
+
+describe("DLT Cafe: review context and batch approval", () => {
+  it("approve records applyToBatch and normalize keeps it", async () => {
+    const { approve, normalizeReview, EMPTY_REVIEW } = await import("./model");
+    const s = approve(EMPTY_REVIEW, undefined, { applyToBatch: true });
+    expect(s.approval.applyToBatch).toBe(true);
+    expect(normalizeReview(JSON.parse(JSON.stringify(s))).approval.applyToBatch).toBe(true);
+    expect(approve(EMPTY_REVIEW).approval.applyToBatch).toBeUndefined();
+  });
+
+  it("setReviewContext stores events, bumps rev and reopens on a new preview", async () => {
+    const { approve, EMPTY_REVIEW } = await import("./model");
+    const { setReviewContext, eventForNote } = await import("./context");
+    let s = setReviewContext(EMPTY_REVIEW, {
+      reviewId: "vid1",
+      batch: "march",
+      events: [
+        { id: "cap-1", type: "caption", t0: 1, t1: 4, text: "Hello" },
+        { id: "zoom-1", type: "zoom", t0: 2, t1: 2.5 },
+        { bad: true },
+      ],
+      newPreview: true,
+    });
+    expect(s.context?.events).toHaveLength(2);
+    expect(s.context?.rev).toBe(1);
+    expect(eventForNote(s.context!.events, { t: 2.2 })?.id).toBe("zoom-1");
+    expect(eventForNote(s.context!.events, { t: 3 })?.id).toBe("cap-1");
+    expect(eventForNote(s.context!.events, { t: 9 })).toBeUndefined();
+    s = approve(s);
+    s = setReviewContext(s, { newPreview: true });
+    expect(s.approval.status).toBe("draft");
+    expect(s.context?.rev).toBe(2);
+    expect(s.context?.batch).toBe("march");
+    s = setReviewContext(s, { batch: null, finalPath: "/tmp/final.mp4" });
+    expect(s.context?.batch).toBeUndefined();
+    expect(s.context?.finalPath).toBe("/tmp/final.mp4");
+  });
+});

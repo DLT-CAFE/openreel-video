@@ -3,7 +3,7 @@
 // Shared by the browser app and the desktop app (same renderer).
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Check, CornerDownRight, MessageSquareText, RotateCcw, Send, Trash2, X } from "lucide-react";
-import { clipAtTime, describeAnchor, getReview, sortedNotes, summarize, type ReviewNote } from "@openreel/review";
+import { clipAtTime, describeAnchor, eventForNote, getReview, sortedNotes, summarize, type ReviewNote } from "@openreel/review";
 import { useProjectStore } from "../../../stores/project-store";
 import { useTimelineStore } from "../../../stores/timeline-store";
 import { getPlaybackBridge } from "../../../bridges/playback-bridge";
@@ -54,6 +54,7 @@ export const ReviewPanel: React.FC<{ onClose?: () => void }> = ({ onClose }) => 
   const review = useMemo(() => getReview(project), [project]);
   const summary = useMemo(() => summarize(review), [review]);
   const [filter, setFilter] = useState<Filter>("open");
+  const [applyToBatch, setApplyToBatch] = useState(false); // DLT Cafe: batch approval, opt-in as in Edit Review
   const [draft, setDraft] = useState("");
   const [, setTick] = useState(0);
   const listRef = useRef<HTMLDivElement>(null);
@@ -189,7 +190,7 @@ export const ReviewPanel: React.FC<{ onClose?: () => void }> = ({ onClose }) => 
       <footer className="space-y-2 border-t border-border px-3 py-2.5">
         <p className="text-[11px] leading-relaxed text-fg-muted" data-testid="review-footer-status">
           {summary.approval === "approved"
-            ? `Approved ${timeAgo(review.approval.at)}.`
+            ? `Approved ${timeAgo(review.approval.at)}.${review.approval.applyToBatch ? " Your notes apply to the rest of the batch." : ""}`
             : summary.approval === "changes_requested"
               ? summary.waitingForClaude
                 ? `Sent to Claude ${timeAgo(review.sentAt)}. Waiting for Claude to pick them up.`
@@ -198,6 +199,17 @@ export const ReviewPanel: React.FC<{ onClose?: () => void }> = ({ onClose }) => 
                 ? `${summary.open} open note${summary.open === 1 ? "" : "s"}. Send them to Claude when you're done.`
                 : "Leave notes as you watch, then send them to Claude."}
         </p>
+        {review.context?.batch && summary.approval !== "approved" && (
+          <label className="flex items-center gap-2 text-[11px] text-fg-muted">
+            <input
+              type="checkbox"
+              checked={applyToBatch}
+              onChange={(e) => setApplyToBatch(e.target.checked)}
+              aria-label="Apply my notes to the rest of the batch"
+            />
+            Apply my notes to the rest of “{review.context.batch}”
+          </label>
+        )}
         <div className="flex gap-2">
           <button
             type="button"
@@ -215,7 +227,7 @@ export const ReviewPanel: React.FC<{ onClose?: () => void }> = ({ onClose }) => 
             <button
               type="button"
               className={btn}
-              onClick={() => run(() => { useProjectStore.getState().approveReview(); toast.success("Review", "Edit approved"); })}
+              onClick={() => run(() => { useProjectStore.getState().approveReview(!!review.context?.batch && applyToBatch); toast.success("Review", "Edit approved"); })}
               title={summary.open ? `${summary.open} note(s) are still open` : undefined}
             >
               <Check size={12} aria-hidden /> Approve
@@ -230,6 +242,11 @@ export const ReviewPanel: React.FC<{ onClose?: () => void }> = ({ onClose }) => 
 const NoteCard: React.FC<{ note: ReviewNote; focused: boolean; onFocus: () => void }> = ({ note, focused, onFocus }) => {
   const project = useProjectStore((s) => s.project);
   const anchor = useMemo(() => describeAnchor(project, note), [project, note]);
+  // DLT Cafe: the edit event under the note (set by Claude when it registered the preview).
+  const event = useMemo(() => {
+    const events = getReview(project).context?.events;
+    return events ? eventForNote(events, note) : undefined;
+  }, [project, note]);
   const [replying, setReplying] = useState(false);
   const [reply, setReply] = useState("");
   const done = note.status === "done";
@@ -258,7 +275,7 @@ const NoteCard: React.FC<{ note: ReviewNote; focused: boolean; onFocus: () => vo
           {formatReviewTime(note.t)}{note.t1 !== undefined ? `–${formatReviewTime(note.t1)}` : ""}
         </button>
         <span className="min-w-0 flex-1 truncate text-[10px] text-fg-muted">
-          {anchor && "missing" in anchor ? "clip removed" : anchor?.mediaName ?? ""}
+          {event ? `${event.type}${event.text ? `: ${event.text}` : ""}` : anchor && "missing" in anchor ? "clip removed" : anchor?.mediaName ?? ""}
         </span>
         {note.author === "claude" && <span className="rounded bg-accent/15 px-1 text-[9px] font-semibold text-accent">Claude</span>}
         <button

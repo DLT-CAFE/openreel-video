@@ -201,6 +201,8 @@ export function runShim(cliPath: string): void {
     hub: async () => hubEndpoint(await ensureHub(cliPath)),
     post: postJson,
   });
+  // Start the web hub up front so a browser tab can pair before the first call.
+  void ensureHub(cliPath).catch(() => {});
   const rl = createInterface({ input: process.stdin });
   rl.on("line", (line) => {
     void handleLine(line, router).then((out) => {

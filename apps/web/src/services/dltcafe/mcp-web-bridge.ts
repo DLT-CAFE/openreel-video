@@ -68,7 +68,7 @@ function clearRetry(): void {
 function scheduleRetry(): void {
   clearRetry();
   retryTimer = setTimeout(connect, retryDelay);
-  retryDelay = Math.min(retryDelay * 1.5, 15_000);
+  retryDelay = Math.min(retryDelay * 1.5, 5_000); // under the hub's 10 s wait for a tab
 }
 
 async function loadHandler(): Promise<Handler> {

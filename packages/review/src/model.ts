@@ -39,6 +39,33 @@ export interface ReviewApproval {
   readonly at?: string;
   /** Open notes when the person last pressed "Send notes to Claude". */
   readonly notesSentCount?: number;
+  /** On approval of a batch's first video: carry its notes to the rest as rules. */
+  readonly applyToBatch?: boolean;
+}
+
+/** Something Claude added to the cut (caption, headline, b-roll, cut...), as in Edit Review's events.json. */
+export interface ReviewEditEvent {
+  readonly id: string;
+  readonly type: string;
+  readonly t0: number;
+  readonly t1: number;
+  readonly text?: string;
+}
+
+/** What a review is about, set by Claude when it registers a preview (see context.ts). */
+export interface ReviewContext {
+  /** Short id the creator pack uses for this video (register_review.py --id). */
+  readonly reviewId?: string;
+  readonly title?: string;
+  /** Batch name: when set, Approve offers "apply my notes to the rest". */
+  readonly batch?: string;
+  /** Style the edit was made in (creator style id), if any. */
+  readonly styleId?: string;
+  /** Preview revision, +1 on each registration. */
+  readonly rev?: number;
+  readonly events: readonly ReviewEditEvent[];
+  /** Full-quality render, once approved and rendered. */
+  readonly finalPath?: string;
 }
 
 export interface ReviewState {
@@ -49,8 +76,10 @@ export interface ReviewState {
   readonly sentAt?: string;
   /** ISO time Claude last read the notes (list_review_notes). */
   readonly claudeSeenAt?: string;
+  readonly context?: ReviewContext;
 }
 
+export const MAX_EVENTS = 5000;
 export const MAX_NOTE_TEXT = 4000;
 export const MAX_NOTES = 2000;
 export const MAX_REPLIES = 200;
@@ -215,8 +244,15 @@ export function sendNotesToClaude(state: ReviewState, clock: ReviewClock = defau
   return { ...state, sentAt: at, approval: { status: "changes_requested", at, notesSentCount: open } };
 }
 
-export function approve(state: ReviewState, clock: ReviewClock = defaultClock): ReviewState {
-  return { ...state, approval: { status: "approved", at: clock.now() } };
+export function approve(
+  state: ReviewState,
+  clock: ReviewClock = defaultClock,
+  options: { applyToBatch?: boolean } = {},
+): ReviewState {
+  return {
+    ...state,
+    approval: { status: "approved", at: clock.now(), ...(options.applyToBatch ? { applyToBatch: true } : {}) },
+  };
 }
 
 /** Back to draft (e.g. the person wants another look after approving). */
@@ -306,9 +342,46 @@ export function normalizeReview(raw: unknown): ReviewState {
       status,
       ...(isStr(ap.at) ? { at: ap.at } : {}),
       ...(typeof ap.notesSentCount === "number" ? { notesSentCount: ap.notesSentCount } : {}),
+      ...(ap.applyToBatch === true && status === "approved" ? { applyToBatch: true } : {}),
     },
     ...(isStr(raw.sentAt) ? { sentAt: raw.sentAt } : {}),
     ...(isStr(raw.claudeSeenAt) ? { claudeSeenAt: raw.claudeSeenAt } : {}),
+    ...(isObj(raw.context) ? { context: normalizeContext(raw.context) } : {}),
+  };
+}
+
+export function normalizeEditEvent(e: unknown): ReviewEditEvent | null {
+  if (!isObj(e) || !isStr(e.id) || !e.id || !isTime(e.t0)) return null;
+  const t1 = isTime(e.t1) && e.t1 >= e.t0 ? e.t1 : e.t0 + 0.3;
+  return {
+    id: e.id.slice(0, 200),
+    type: isStr(e.type) && e.type ? e.type.slice(0, 40) : "edit",
+    t0: e.t0,
+    t1,
+    ...(isStr(e.text) && e.text ? { text: e.text.slice(0, 500) } : {}),
+  };
+}
+
+export function normalizeContext(raw: Record<string, unknown>): ReviewContext {
+  const events: ReviewEditEvent[] = [];
+  for (const e of Array.isArray(raw.events) ? raw.events.slice(0, MAX_EVENTS) : []) {
+    const ev = normalizeEditEvent(e);
+    if (ev) events.push(ev);
+  }
+  const str = (v: unknown, max = 300) => (isStr(v) && v.trim() ? v.trim().slice(0, max) : undefined);
+  const reviewId = str(raw.reviewId, 120);
+  const title = str(raw.title);
+  const batch = str(raw.batch, 120);
+  const styleId = str(raw.styleId, 120);
+  const finalPath = str(raw.finalPath, 2000);
+  return {
+    ...(reviewId ? { reviewId } : {}),
+    ...(title ? { title } : {}),
+    ...(batch ? { batch } : {}),
+    ...(styleId ? { styleId } : {}),
+    ...(typeof raw.rev === "number" && Number.isFinite(raw.rev) ? { rev: raw.rev } : {}),
+    events,
+    ...(finalPath ? { finalPath } : {}),
   };
 }
 

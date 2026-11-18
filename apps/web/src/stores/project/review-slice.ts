@@ -35,7 +35,8 @@ export interface ReviewSlice {
   replyReviewNote: (noteId: string, text: string, status?: ReviewNoteStatus) => void;
   setReviewNoteStatus: (noteId: string, status: ReviewNoteStatus) => void;
   sendReviewToClaude: () => void;
-  approveReview: () => void;
+  /** applyToBatch: carry this video's notes to the rest of its batch (Edit Review's checkbox). */
+  approveReview: (applyToBatch?: boolean) => void;
   reopenReview: () => void;
 }
 
@@ -65,7 +66,7 @@ export function createReviewSlice(set: Set, get: Get): ReviewSlice {
       void updateReview((r) => replyToNote(r, noteId, { text, author: "user", ...(status ? { status } : {}) }).state),
     setReviewNoteStatus: (noteId, status) => void updateReview((r) => setNoteStatus(r, noteId, status)),
     sendReviewToClaude: () => void updateReview((r) => sendNotesToClaude(r)),
-    approveReview: () => void updateReview((r) => approve(r)),
+    approveReview: (applyToBatch) => void updateReview((r) => approve(r, undefined, { applyToBatch })),
     reopenReview: () => void updateReview((r) => reopenReview(r)),
   };
 }

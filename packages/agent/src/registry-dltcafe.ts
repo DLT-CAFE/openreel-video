@@ -10,12 +10,14 @@ import {
   addNote,
   clipAtTime,
   describeAnchor,
+  eventForNote,
   getReview,
   markClaudeSeen,
   replyToNote,
   reviewEventSince,
   ReviewError,
   setNoteStatus,
+  setReviewContext,
   sortedNotes,
   summarize,
   type ReviewNote,
@@ -137,9 +139,25 @@ function reviewFail(error: unknown): ToolResult {
   throw error;
 }
 
-function noteView(project: Project, note: ReviewNote) {
+function noteView(project: Project, note: ReviewNote, review?: ReviewState) {
   const anchor = describeAnchor(project, note);
-  return { ...note, anchor: anchor ?? null };
+  // DLT Cafe: the edit event under the note (caption, headline, b-roll...), as in Edit Review.
+  const ev = review?.context ? eventForNote(review.context.events, note) : undefined;
+  return { ...note, anchor: anchor ?? null, ...(ev ? { eventId: ev.id, event: { type: ev.type, text: ev.text ?? "" } } : {}) };
+}
+
+function contextView(review: ReviewState) {
+  const c = review.context;
+  if (!c) return null;
+  return {
+    reviewId: c.reviewId ?? null,
+    title: c.title ?? null,
+    batch: c.batch ?? null,
+    styleId: c.styleId ?? null,
+    rev: c.rev ?? 0,
+    events: c.events.length,
+    finalPath: c.finalPath ?? null,
+  };
 }
 
 function fmt(t: number): string {
@@ -161,14 +179,19 @@ DLTCAFE_TOOLS.push(
     expensive: false,
     handler: (_args, host) => {
       host.requireOpenProject();
-      const s = summarize(readReview(host));
+      const review = readReview(host);
+      const s = summarize(review);
       const line =
         s.approval === "approved"
           ? `Approved${s.open ? ` (${s.open} note(s) still open)` : ""}.`
           : s.approval === "changes_requested"
             ? `Changes requested: ${s.open} open note(s)${s.waitingForClaude ? ", waiting for Claude" : ""}.`
             : `Draft: ${s.open} open / ${s.done} done note(s).`;
-      return ok(line, s);
+      return ok(line, {
+        ...s,
+        applyToBatch: review.approval.applyToBatch === true,
+        context: contextView(review),
+      });
     },
   },
   {
@@ -176,7 +199,7 @@ DLTCAFE_TOOLS.push(
     domain: "project",
     title: "List review notes",
     description:
-      "Timestamped review notes on the open project, sorted by time, with replies and the clip each note points at (anchor: clipId, trackName, mediaName, clip start/end, sourceTime; missing:true if that clip was deleted). status: open (default) | done | all. Marks the notes as seen by Claude.",
+      "Timestamped review notes on the open project, sorted by time, with replies and the clip each note points at (anchor: clipId, trackName, mediaName, clip start/end, sourceTime; missing:true if that clip was deleted), plus eventId/event when set_review_context recorded the edit events. status: open (default) | done | all. Marks the notes as seen by Claude.",
     inputSchema: obj({ status: statusEnum(["open", "done", "all"]) }),
     readOnly: false,
     destructive: false,
@@ -191,7 +214,7 @@ DLTCAFE_TOOLS.push(
       const lines = notes.map((n) => `- [${n.id}] ${fmt(n.t)} ${n.status}: ${n.text}${n.replies.length ? ` (${n.replies.length} repl${n.replies.length === 1 ? "y" : "ies"})` : ""}`);
       return ok(
         `${notes.length} ${filter === "all" ? "" : filter + " "}review note(s); approval ${review.approval.status}${lines.length ? "\n" + lines.join("\n") : ""}`,
-        { summary: summarize(review), notes: notes.map((n) => noteView(project, n)) },
+        { summary: summarize(review), notes: notes.map((n) => noteView(project, n, review)) },
       );
     },
   },
@@ -273,6 +296,46 @@ DLTCAFE_TOOLS.push(
   },
 );
 
+DLTCAFE_TOOLS.push({
+  name: "set_review_context",
+  domain: "project",
+  title: "Set review context",
+  description:
+    "Record what the open project's review is about, as Edit Review did: reviewId (the creator pack's --id), title, batch (Approve then offers 'apply my notes to the rest'), styleId, and events = what you added to the cut [{id, type, t0, t1, text}] (caption, headline, graphic, broll, zoom, sfx, music, cut...; keep ids stable across re-renders). Notes are then tied to the event under them (list_review_notes eventId). newPreview:true = a new preview was registered: bumps rev and puts approval back to draft (notes are kept). finalPath marks the full-quality render. Pass null to clear a field.",
+  inputSchema: obj({
+    reviewId: str,
+    title: str,
+    batch: { type: ["string", "null"] },
+    styleId: { type: ["string", "null"] },
+    events: { type: "array", items: { type: "object" } },
+    finalPath: { type: ["string", "null"] },
+    newPreview: { type: "boolean" },
+  }),
+  readOnly: false,
+  destructive: false,
+  expensive: false,
+  handler: (args, host) => {
+    try {
+      const res = writeReview(host, (review) =>
+        setReviewContext(review, {
+          ...(typeof args.reviewId === "string" ? { reviewId: args.reviewId } : {}),
+          ...(typeof args.title === "string" ? { title: args.title } : {}),
+          ...(args.batch === null || typeof args.batch === "string" ? { batch: args.batch as string | null } : {}),
+          ...(args.styleId === null || typeof args.styleId === "string" ? { styleId: args.styleId as string | null } : {}),
+          ...(Array.isArray(args.events) ? { events: args.events } : {}),
+          ...(args.finalPath === null || typeof args.finalPath === "string" ? { finalPath: args.finalPath as string | null } : {}),
+          newPreview: args.newPreview === true,
+        }),
+      );
+      if (isResult(res)) return res;
+      const c = contextView(res);
+      return ok(`Review context set: ${c?.events ?? 0} event(s), rev ${c?.rev ?? 0}, approval ${res.approval.status}`, c);
+    } catch (error) {
+      return reviewFail(error);
+    }
+  },
+});
+
 /** Longest wait per call; stays under the desktop bridge's 120 s per-call limit. */
 export const REVIEW_WAIT_MAX_SEC = 110;
 const REVIEW_WAIT_DEFAULT_SEC = 100;
@@ -297,7 +360,8 @@ DLTCAFE_TOOLS.push({
     host.requireOpenProject();
     const since = typeof args.since === "string" && args.since ? args.since : undefined;
     const now = reviewEventSince(readReview(host), since);
-    if (now) return ok(`Review ${now.event} at ${now.at}`, { ...now, cursor: now.at });
+    const batchFlag = () => ({ applyToBatch: readReview(host).approval.applyToBatch === true });
+    if (now) return ok(`Review ${now.event} at ${now.at}`, { ...now, cursor: now.at, ...batchFlag() });
     if (typeof host.waitForReviewEvent !== "function") {
       return fail("wait_for_review_send is not available in this host", "UNSUPPORTED");
     }
@@ -309,6 +373,6 @@ DLTCAFE_TOOLS.push({
       const cursor = since ?? readReview(host).claudeSeenAt ?? "";
       return ok(`No Send or Approve within ${sec}s; call again with since to keep waiting`, { event: "timeout", at: null, cursor });
     }
-    return ok(`Review ${event.event} at ${event.at}`, { ...event, cursor: event.at });
+    return ok(`Review ${event.event} at ${event.at}`, { ...event, cursor: event.at, ...batchFlag() });
   },
 });
