@@ -2,6 +2,7 @@ import React from "react";
 import { ToolcraftPanelSection } from "@openreel/ui";
 import { useInspectorNavigationStore } from "../../../../stores/inspector-navigation-store";
 import { useUIStore } from "../../../../stores/ui-store";
+import { useInspectorV2, useSectionVisible } from "../../inspector-v2/context"; // DLT Cafe M4
 
 export interface InspectorSectionProps {
   title: string;
@@ -16,7 +17,9 @@ export const InspectorSection: React.FC<InspectorSectionProps> = ({
   sectionId,
   children,
 }) => {
-  const [isCollapsed, setIsCollapsed] = React.useState(!defaultOpen);
+  const inV2 = useInspectorV2() !== null; // DLT Cafe M4: sections open by default inside sub-tabs
+  const visible = useSectionVisible(sectionId ?? title);
+  const [isCollapsed, setIsCollapsed] = React.useState(!(defaultOpen || inV2));
   const sectionRef = React.useRef<HTMLDivElement>(null);
   const request = useInspectorNavigationStore((state) =>
     state.request?.sectionId === sectionId ? state.request : null,
@@ -35,8 +38,10 @@ export const InspectorSection: React.FC<InspectorSectionProps> = ({
     return () => cancelAnimationFrame(frame);
   }, [request, requestIsSelected]);
 
+  if (!visible) return null;
+
   return (
-    <div ref={sectionRef}>
+    <div ref={sectionRef} data-v2-section="">
       <ToolcraftPanelSection
         title={title}
         collapsed={isCollapsed}

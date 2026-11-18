@@ -43,6 +43,9 @@ import {
 import { InspectorClipHeader } from "./inspector/shell/InspectorClipHeader";
 import { InspectorTabErrorBoundary } from "./inspector/shell/InspectorTabErrorBoundary";
 import { InspectorSection } from "./inspector/shell/InspectorSection";
+import { InspectorV2Frame } from "./inspector-v2/InspectorV2Frame"; // DLT Cafe M4
+import { V2TabSlot } from "./inspector-v2/context"; // DLT Cafe M4
+import { useInspectorV2Flag } from "./inspector-v2/flag"; // DLT Cafe M4
 import { ColorTab } from "./inspector/tabs/ColorTab";
 import { AudioTab } from "./inspector/tabs/AudioTab";
 import { TransformTab } from "./inspector/tabs/TransformTab";
@@ -120,6 +123,8 @@ const EmptyState: React.FC = () => (
 );
 
 export const InspectorPanel: React.FC = () => {
+  const useV2 = useInspectorV2Flag((st) => st.enabled); // DLT Cafe M4
+  const setUseV2 = useInspectorV2Flag((st) => st.setEnabled);
   // Stores
   const {
     getClip,
@@ -852,44 +857,11 @@ export const InspectorPanel: React.FC = () => {
     [clipType],
   );
 
-  return (
-    <div
-      data-tour="inspector"
-      className="w-full min-w-0 bg-bg-1 flex flex-col h-full overflow-hidden"
-    >
-      {selectedClip && tabIds.length > 0 && (
-        <InspectorClipHeader
-          name={
-            project.mediaLibrary.items.find(
-              (m) => m.id === selectedClip.mediaId,
-            )?.name ??
-            (clipType
-              ? clipType.charAt(0).toUpperCase() + clipType.slice(1)
-              : "Clip")
-          }
-          durationSeconds={selectedClip.duration}
-          typeLabel={clipType ?? "clip"}
-        />
-      )}
-
-      <div className="overflow-y-auto flex-1 min-h-0 custom-scrollbar">
-      <div className="py-[18px] px-5">
-        {selectedTimelineClip && selectedClipIds.length === 1 && (
-          <QuickEditBar clipId={selectedTimelineClip.id} onCleanAudio={handleEnhanceAudio} isCleaningAudio={isEnhancingAudio} />
-        )}
-        <Section title="Multi-Camera Editing" sectionId="multicam">
-          <InspectorTabErrorBoundary>
-            <React.Suspense fallback={<p role="status">Loading camera tools…</p>}>
-              <MultiCameraPanel key={project.id} />
-            </React.Suspense>
-          </InspectorTabErrorBoundary>
-        </Section>
-        {selectedClipIds.length > 1 ? (
-          <MultiClipInspector clipIds={selectedClipIds} />
-        ) : selectedClip ? (
-          <InspectorTabErrorBoundary key={clipId}>
+  // DLT Cafe M4: the clip's tab content, wrapped in V2 slots (no-op in the classic inspector).
+  const clipTabsContent = (
             <div className="space-y-4">
               {tabIds.includes("transform") && (
+                <V2TabSlot slot="transform">
                 <TransformTab
                   clipId={clipId}
                   clipType={clipType}
@@ -901,22 +873,28 @@ export const InspectorPanel: React.FC = () => {
                   canvasHeight={project.settings.height}
                   handleTransformChange={handleTransformChange}
                 />
+                </V2TabSlot>
               )}
 
               {tabIds.includes("style") && (
+                <V2TabSlot slot="style">
                 <StyleTab
                   clipId={clipId}
                   showTextSection={showTextSection}
                   showShapeSection={showShapeSection}
                   showSVGSection={showSVGSection}
                 />
+                </V2TabSlot>
               )}
 
               {tabIds.includes("color") && (
+                <V2TabSlot slot="color">
                 <ColorTab clipId={clipId} showColorGrading={showColorGrading} />
+                </V2TabSlot>
               )}
 
               {tabIds.includes("effects") && (
+                <V2TabSlot slot="effects">
                 <EffectsTab
                   clipId={clipId}
                   clipType={clipType}
@@ -943,9 +921,11 @@ export const InspectorPanel: React.FC = () => {
                   handleKeyColorChange={handleKeyColorChange}
                   handleToleranceChange={handleToleranceChange}
                 />
+                </V2TabSlot>
               )}
 
               {tabIds.includes("audio") && (
+                <V2TabSlot slot="audio">
                 <AudioTab
                   clipId={clipId}
                   clipType={clipType}
@@ -953,24 +933,30 @@ export const InspectorPanel: React.FC = () => {
                   noiseReductionSectionTitle={noiseReductionSectionTitle}
                   selectedNoiseReductionEffect={selectedNoiseReductionEffect}
                 />
+                </V2TabSlot>
               )}
 
               {tabIds.includes("speed") && (
+                <V2TabSlot slot="speed">
                 <SpeedTab
                   showVideoControls={showVideoControls}
                   selectedClip={selectedClip}
                 />
+                </V2TabSlot>
               )}
 
               {tabIds.includes("animate") && (
+                <V2TabSlot slot="animate">
                 <AnimateTab
                   clipId={clipId}
                   clipType={clipType}
                   showTextSection={showTextSection}
                 />
+                </V2TabSlot>
               )}
 
               {tabIds.includes("ai") && (
+                <V2TabSlot slot="ai">
                 <AiTab
                   clipId={clipId}
                   clipType={clipType}
@@ -988,8 +974,83 @@ export const InspectorPanel: React.FC = () => {
                   captionWordsPerLine={captionWordsPerLine}
                   onCaptionWordsPerLineChange={setCaptionWordsPerLine}
                 />
+                </V2TabSlot>
               )}
             </div>
+  );
+
+  if (useV2 && selectedClip && selectedClipIds.length === 1 && tabIds.length > 0) {
+    return (
+      <div data-tour="inspector" className="w-full min-w-0 bg-bg-1 flex flex-col h-full overflow-hidden">
+        <InspectorClipHeader
+          name={project.mediaLibrary.items.find((m) => m.id === selectedClip.mediaId)?.name ?? (clipType ? clipType.charAt(0).toUpperCase() + clipType.slice(1) : "Clip")}
+          durationSeconds={selectedClip.duration}
+          typeLabel={clipType ?? "clip"}
+        />
+        <InspectorTabErrorBoundary key={clipId}>
+          <InspectorV2Frame
+            clipId={clipId}
+            oldTabIds={tabIds}
+            lead={selectedTimelineClip ? <QuickEditBar clipId={selectedTimelineClip.id} onCleanAudio={handleEnhanceAudio} isCleaningAudio={isEnhancingAudio} /> : null}
+          >
+            {clipTabsContent}
+            <V2TabSlot slot="transform">
+              <Section title="Multi-Camera Editing" sectionId="multicam">
+                <InspectorTabErrorBoundary>
+                  <React.Suspense fallback={<p role="status">Loading camera tools…</p>}>
+                    <MultiCameraPanel key={project.id} />
+                  </React.Suspense>
+                </InspectorTabErrorBoundary>
+              </Section>
+            </V2TabSlot>
+          </InspectorV2Frame>
+        </InspectorTabErrorBoundary>
+      </div>
+    );
+  }
+
+  return (
+    <div
+      data-tour="inspector"
+      className="w-full min-w-0 bg-bg-1 flex flex-col h-full overflow-hidden"
+    >
+      {selectedClip && tabIds.length > 0 && (
+        <InspectorClipHeader
+          name={
+            project.mediaLibrary.items.find(
+              (m) => m.id === selectedClip.mediaId,
+            )?.name ??
+            (clipType
+              ? clipType.charAt(0).toUpperCase() + clipType.slice(1)
+              : "Clip")
+          }
+          durationSeconds={selectedClip.duration}
+          typeLabel={clipType ?? "clip"}
+        />
+      )}
+
+      <div className="overflow-y-auto flex-1 min-h-0 custom-scrollbar">
+      <div className="py-[18px] px-5">
+        {!useV2 && selectedClip && (
+          <button type="button" onClick={() => setUseV2(true)} className="mb-3 w-full rounded-md border border-dashed border-border-strong px-3 py-1.5 text-[12px] text-fg-2 hover:bg-hover hover:text-fg">
+            Try the new inspector (tabs)
+          </button>
+        )}{/* DLT Cafe M4 */}
+        {selectedTimelineClip && selectedClipIds.length === 1 && (
+          <QuickEditBar clipId={selectedTimelineClip.id} onCleanAudio={handleEnhanceAudio} isCleaningAudio={isEnhancingAudio} />
+        )}
+        <Section title="Multi-Camera Editing" sectionId="multicam">
+          <InspectorTabErrorBoundary>
+            <React.Suspense fallback={<p role="status">Loading camera tools…</p>}>
+              <MultiCameraPanel key={project.id} />
+            </React.Suspense>
+          </InspectorTabErrorBoundary>
+        </Section>
+        {selectedClipIds.length > 1 ? (
+          <MultiClipInspector clipIds={selectedClipIds} />
+        ) : selectedClip ? (
+          <InspectorTabErrorBoundary key={clipId}>
+            {clipTabsContent}
           </InspectorTabErrorBoundary>
         ) : selectedTransition && transitionClipA ? (
           <div className="space-y-3">

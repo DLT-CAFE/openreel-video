@@ -206,7 +206,8 @@ export const EditorInterface: React.FC = () => {
   const storedInspectorW = useEditorLayoutStore((s) => s.inspectorWidth);
   const swapSides = useEditorLayoutStore((s) => s.swapSides);
   const mediaWidth = storedMediaW ?? (window.innerWidth < 1600 ? MIN_MEDIA_W : DEFAULT_MEDIA_W);
-  const inspectorWidth = storedInspectorW ?? (window.innerWidth < 1600 ? MIN_INSPECTOR_W : DEFAULT_INSPECTOR_W);
+  // DLT Cafe M4: the tabbed inspector needs ~320px to fit its tab row.
+  const inspectorWidth = storedInspectorW ?? (window.innerWidth < 1600 ? Math.max(MIN_INSPECTOR_W, 320) : DEFAULT_INSPECTOR_W);
   const setMediaWidth = useCallback((v: number | ((w: number) => number)) => {
     const s = useEditorLayoutStore.getState();
     const cur = s.mediaWidth ?? (window.innerWidth < 1600 ? MIN_MEDIA_W : DEFAULT_MEDIA_W);

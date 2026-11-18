@@ -1,5 +1,7 @@
 import React from "react";
 import { ToolcraftSliderControl } from "@openreel/ui";
+import { useInspectorV2 } from "../../inspector-v2/context"; // DLT Cafe M4
+import { ParamRow } from "../../inspector-v2/kit/ParamRow"; // DLT Cafe M4
 
 export interface PropertySliderProps {
   label: string;
@@ -14,7 +16,27 @@ export interface PropertySliderProps {
   className?: string;
 }
 
-export const PropertySlider: React.FC<PropertySliderProps> = ({
+export const PropertySlider: React.FC<PropertySliderProps> = (props) =>
+  // DLT Cafe M4: Inspector V2 renders sliders as label | slider | number+stepper rows.
+  useInspectorV2() ? (
+    <div className={props.className}>
+      <ParamRow
+        label={props.label}
+        value={props.value}
+        onChange={props.onChange}
+        min={props.min}
+        max={props.max}
+        step={props.step}
+        formatValue={props.formatValue}
+        disabled={props.isDisabled}
+        description={props.description}
+      />
+    </div>
+  ) : (
+    <ClassicPropertySlider {...props} />
+  );
+
+const ClassicPropertySlider: React.FC<PropertySliderProps> = ({
   label,
   value,
   onChange,

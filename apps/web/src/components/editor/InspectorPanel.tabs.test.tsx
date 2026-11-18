@@ -1,11 +1,15 @@
 import "../../test/install-local-storage-mock";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { cleanup, render, screen } from "@testing-library/react";
 import type { Project } from "@openreel/core";
 import { createEmptyProject } from "../../stores/project/project-helpers";
 import { useProjectStore } from "../../stores/project-store";
 import { useUIStore } from "../../stores/ui-store";
 import { InspectorPanel } from "./InspectorPanel";
+import { useInspectorV2Flag } from "./inspector-v2/flag";
+
+// DLT Cafe M4: these cover the classic inspector; V2 has its own tests.
+beforeEach(() => useInspectorV2Flag.setState({ enabled: false }));
 
 const clipId = "clip-vid";
 const trackId = "track-vid";

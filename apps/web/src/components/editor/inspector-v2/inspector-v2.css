@@ -1,0 +1,17 @@
+/* DLT Cafe M4: Inspector V2 typography and spacing (13px, 8px grid) applied
+   to the existing section components without editing them. */
+.inspector-v2 [class*="text-[7px]"],
+.inspector-v2 [class*="text-[8px]"],
+.inspector-v2 [class*="text-[9px]"],
+.inspector-v2 [class*="text-[10px]"] { font-size: 12px !important; line-height: 16px; }
+.inspector-v2 [class*="text-[11px]"],
+.inspector-v2 .text-xs { font-size: 12px !important; line-height: 16px; }
+.inspector-v2 .text-sm { font-size: 13px !important; }
+
+/* Loose content of an old tab shows only on its home sub-tab. */
+.inspector-v2 [data-v2-loose="hide"] > :not([data-v2-section]):not(:has([data-v2-section])) { display: none !important; }
+
+/* Section rows: compact header, 8px rhythm. */
+.inspector-v2 [data-v2-section] { margin-bottom: 8px; }
+.inspector-v2 [data-v2-section] [data-slot="toolcraft-panel-section-header"] { min-height: 40px; padding: 8px 12px; }
+.inspector-v2 [data-v2-section] [data-slot="toolcraft-panel-section-header"] * { font-size: 13px; }
