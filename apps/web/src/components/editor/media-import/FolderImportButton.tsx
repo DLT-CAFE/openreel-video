@@ -39,9 +39,9 @@ export const FolderImportButton: React.FC<{
         title="Import a folder (media files in all subfolders)"
         disabled={disabled}
         onClick={() => void pick()}
-        className="flex shrink-0 items-center justify-center rounded-[9px] border border-border bg-bg p-[10px] text-fg-2 hover:text-fg disabled:opacity-40"
+        className="mb-[14px] flex items-center gap-1.5 rounded-md px-1 py-0.5 text-[11px] font-medium text-fg-muted hover:text-fg disabled:opacity-40"
       >
-        <FolderPlus size={15} aria-hidden />
+        <FolderPlus size={13} aria-hidden /> Import a folder…
       </button>
       <input
         ref={inputRef}

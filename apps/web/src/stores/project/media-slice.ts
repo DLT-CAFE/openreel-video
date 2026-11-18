@@ -3,7 +3,8 @@ import type { StoreApi } from "zustand";
 import type { Action, MediaItem } from "@openreel/core";
 import type { ProjectState } from "../project-store";
 import { getMediaBridge, initializeMediaBridge } from "../../bridges/media-bridge";
-import { saveMediaBlob, deleteMediaBlob } from "../../services/media-storage";
+import { deleteMediaBlob } from "../../services/media-storage";
+import { formatBytes, persistMediaOrLink } from "../../services/dltcafe/linked-media"; // DLT Cafe
 import { toast } from "../notification-store";
 
 type Get = StoreApi<ProjectState>["getState"];
@@ -165,12 +166,16 @@ export function createMediaSlice(set: Set, get: Get): MediaSlice {
         set({ project: updatedProject });
 
         try {
-          await saveMediaBlob(
+          // DLT Cafe: big files with a saved handle stay on disk (linked), the rest are copied.
+          const stored = await persistMediaOrLink(
             updatedProject.id,
             newMediaItem.id,
             file,
             newMediaItem.metadata,
           );
+          if (stored === "linked") {
+            toast.info("Linked, not copied", `${file.name} (${formatBytes(file.size)}) stays on disk; keep it where it is.`);
+          }
         } catch (err) {
           console.error("[ProjectStore] Failed to persist media blob:", err);
           toast.warning(
@@ -402,7 +407,7 @@ export function createMediaSlice(set: Set, get: Get): MediaSlice {
         });
 
         try {
-          await saveMediaBlob(
+          await persistMediaOrLink( // DLT Cafe: relinked big files stay linked
             currentProject.id,
             updatedItem.id,
             file,

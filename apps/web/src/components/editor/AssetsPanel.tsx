@@ -28,6 +28,8 @@ import { toast } from "../../stores/notification-store";
 import { saveFileHandle, saveDirectoryHandle } from "../../services/media-storage";
 import { FolderImportButton } from "./media-import/FolderImportButton"; // DLT Cafe
 import { summarizeScan, type FolderScan } from "./media-import/folder-import"; // DLT Cafe
+import { LinkedMediaBanner } from "./media-import/LinkedMediaBanner"; // DLT Cafe
+import { pickMediaFilesWithHandles, supportsOpenFilePicker } from "../../services/dltcafe/linked-media"; // DLT Cafe
 import { ToolcraftButton as Button } from "@openreel/ui";
 import { ToolcraftIconButton as IconButton } from "@openreel/ui";
 import { ToolcraftSelectableCard as SelectableCard } from "@openreel/ui";
@@ -701,7 +703,7 @@ export const AssetsPanel: React.FC = () => {
 
   // Handle file import with loading state
   const handleFileImport = useCallback(
-    async (files: FileList | null) => {
+    async (files: FileList | File[] | null) => {
       if (!files || files.length === 0) return;
 
       setIsImporting(true);
@@ -949,8 +951,17 @@ export const AssetsPanel: React.FC = () => {
   );
 
   const triggerFileInput = useCallback(() => {
+    // DLT Cafe: in Chromium use the file picker that returns handles, so big
+    // files can be linked instead of copied (and relinked after a reload).
+    if (supportsOpenFilePicker()) {
+      void pickMediaFilesWithHandles().then((files) => {
+        if (files === null) fileInputRef.current?.click();
+        else if (files.length) void handleFileImport(files);
+      });
+      return;
+    }
     fileInputRef.current?.click();
-  }, []);
+  }, [handleFileImport]);
 
   // DLT Cafe: import every media file in a folder (recursive).
   const handleFolderScan = useCallback(
@@ -1046,7 +1057,8 @@ export const AssetsPanel: React.FC = () => {
           <div className="flex min-h-0 flex-1 flex-col">
             <div className="px-4 pt-[18px] shrink-0">
               <div className="font-bold text-[18px] text-fg mb-[14px]">Media</div>
-              <div className="flex gap-2 mb-[18px]">
+              <LinkedMediaBanner />
+              <div className="flex gap-2 mb-2">
                 <button
                   type="button"
                   aria-label="Import media"
@@ -1068,11 +1080,6 @@ export const AssetsPanel: React.FC = () => {
                   </svg>
                   Import
                 </button>
-                <FolderImportButton
-                  disabled={isImporting}
-                  onScanning={(message) => { setIsImporting(true); setImportProgress(message); }}
-                  onScan={(scan) => void handleFolderScan(scan)}
-                />
                 <button
                   type="button"
                   aria-label="Record"
@@ -1115,6 +1122,11 @@ export const AssetsPanel: React.FC = () => {
                   </svg>
                 </button>
               </div>
+              <FolderImportButton
+                disabled={isImporting}
+                onScanning={(message) => { setIsImporting(true); setImportProgress(message); }}
+                onScan={(scan) => void handleFolderScan(scan)}
+              />{/* DLT Cafe */}
             </div>
 
             {missingAssetsCount > 0 && (
