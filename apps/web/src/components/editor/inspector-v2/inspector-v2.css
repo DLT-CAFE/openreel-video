@@ -15,3 +15,40 @@
 .inspector-v2 [data-v2-section] { margin-bottom: 8px; }
 .inspector-v2 [data-v2-section] [data-slot="toolcraft-panel-section-header"] { min-height: 40px; padding: 8px 12px; }
 .inspector-v2 [data-v2-section] [data-slot="toolcraft-panel-section-header"] * { font-size: 13px; }
+
+/* Det: no boxed outline around each collapsible section; a thin divider instead. */
+.inspector-v2 [data-v2-section] > [data-toolcraft-panel-section] {
+  border: 0 !important;
+  border-radius: 0 !important;
+  border-bottom: 1px solid var(--border) !important;
+  background: transparent !important;
+  margin-bottom: 0 !important;
+}
+.inspector-v2 [data-v2-section] { margin-bottom: 0; }
+.inspector-v2 [data-v2-section] [data-slot="toolcraft-panel-section-header"] { padding-left: 4px; padding-right: 4px; }
+
+/* Select / dropdown triggers sit flush (no outline), with a visible focus state. */
+.inspector-v2 button[role="combobox"],
+.inspector-v2 select {
+  border-color: transparent !important;
+  box-shadow: none !important;
+  background-color: var(--bg-2) !important;
+}
+.inspector-v2 button[role="combobox"]:hover,
+.inspector-v2 select:hover { background-color: var(--hover) !important; }
+.inspector-v2 button[role="combobox"]:focus-visible,
+.inspector-v2 select:focus-visible {
+  outline: 2px solid var(--accent) !important;
+  outline-offset: 1px;
+}
+
+/* Nested collapsible cards (e.g. Equalizer, White Balance) also lose their outline. */
+.inspector-v2 [data-v2-section] :is(div, section):has(> [aria-expanded]),
+.inspector-v2 [data-v2-section] :is(div, section):has(> * > [aria-expanded]) {
+  border-color: transparent !important;
+  box-shadow: none !important;
+}
+.inspector-v2 [data-v2-section] :is(div, section).border:has(> button:first-child svg.transition-transform),
+.inspector-v2 [data-v2-section] :is(div, section).border:has(> div:first-child button svg.transition-transform) {
+  border-color: transparent !important;
+}
