@@ -30,6 +30,7 @@ import { FolderImportButton } from "./media-import/FolderImportButton"; // DLT C
 import { summarizeScan, type FolderScan } from "./media-import/folder-import"; // DLT Cafe
 import { LinkedMediaBanner } from "./media-import/LinkedMediaBanner"; // DLT Cafe
 import { useEditorLayoutStore } from "./shell/layout-store"; // DLT Cafe M2
+import { DockGrip } from "./shell/dock-drag"; // DLT Cafe M6
 import { ChevronsLeft } from "lucide-react"; // DLT Cafe M2
 import { pickMediaFilesWithHandles, supportsOpenFilePicker } from "../../services/dltcafe/linked-media"; // DLT Cafe
 import { ToolcraftButton as Button } from "@openreel/ui";
@@ -1617,6 +1618,7 @@ export const AssetsPanel: React.FC = () => {
           );
         })}
       </div>
+        <DockGrip panel="media" className="[.editor-compact_&]:hidden" />
         <button
           type="button"
           aria-label="Hide media panel"

@@ -9,6 +9,7 @@ import { Preview } from "./Preview";
 import { InspectorPanel } from "./InspectorPanel";
 import { CollabDock } from "./collab/CollabDock"; // DLT Cafe M3
 import { useEditorLayoutStore } from "./shell/layout-store"; // DLT Cafe M2
+import { DockDropOverlay, DockGrip } from "./shell/dock-drag"; // DLT Cafe M6
 import { ChevronsRight } from "lucide-react"; // DLT Cafe M2
 import { CollabLauncher } from "./collab/CollabLauncher"; // DLT Cafe M3
 import { installCollabBridges, setCollabChatBridgeEnabled } from "./collab/collab-store"; // DLT Cafe M3
@@ -468,12 +469,13 @@ export const EditorInterface: React.FC = () => {
         <div
           id="editor-panel-inspector"
           hidden={compact && compactPanel !== "inspector"}
-          className="editor-panel bg-bg-1 min-w-0 min-h-0 overflow-hidden rounded-xl border border-border shadow-sm"
+          className="editor-panel relative bg-bg-1 min-w-0 min-h-0 overflow-hidden rounded-xl border border-border shadow-sm"
           style={{ gridArea: "inspector" }}
         >
           <PanelErrorBoundary name="Inspector">
             <InspectorPanel />
           </PanelErrorBoundary>
+          {!compact && <DockGrip panel="inspector" className="absolute left-1/2 top-0 z-10 h-5 w-8 -translate-x-1/2 rotate-90 opacity-60 hover:opacity-100" />}{/* DLT Cafe M6 */}
         </div></>}
 
         {(chatVisible || hasOpenedChat) && (
@@ -576,6 +578,7 @@ export const EditorInterface: React.FC = () => {
       </div>
       <CollabDock compact={compact} />{/* DLT Cafe M3: AI chat + review notes */}
       <CollabLauncher />{/* DLT Cafe M3: bottom-right of the window */}
+      <DockDropOverlay />{/* DLT Cafe M6 */}
       </div>
 
       {compact && (

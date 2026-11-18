@@ -8,6 +8,7 @@ import { ReviewPanel } from "../review/ReviewPanel";
 import { useCollabStore } from "./collab-store";
 import { useChatStore } from "../../../stores/chat-store";
 import { assistantReplyCount } from "./CollabLauncher";
+import { DockGrip } from "../shell/dock-drag";
 
 const ChatPanel = lazy(() => import("../chat/ChatPanel").then((m) => ({ default: m.ChatPanel })));
 
@@ -51,6 +52,7 @@ export const CollabPanel: React.FC<{ onHeaderPointerDown?: (e: React.PointerEven
           ))}
         </div>
         <div className="flex-1" />
+        {mode === "docked" && <span onPointerDown={(e) => e.stopPropagation()}><DockGrip panel="collab" /></span>}
         <button
           type="button"
           className={iconBtn}
