@@ -5,6 +5,7 @@ import { Workspace } from "./shell/Workspace";
 import { DesktopStartScreen } from "./start/DesktopStartScreen";
 import { DesktopExportButton } from "./editor/DesktopExportButton";
 import { ReviewTitleButton } from "../components/editor/review/ReviewTitleButton"; // DLT Cafe
+import { ToastContainer } from "../components/Toast"; // DLT Cafe
 import { EditorBootstrapGate } from "./editor/EditorBootstrapGate";
 import { ErrorBoundary } from "../components/ErrorBoundary";
 import { useProjectStore } from "../stores/project-store";
@@ -138,6 +139,7 @@ export function DesktopApp(): JSX.Element {
       </div>
       <UpdateBanner />
       <SettingsDialog />
+      <ToastContainer />{/* DLT Cafe: desktop shell had no toast host, so notifications were invisible */}
     </div>
   );
 }

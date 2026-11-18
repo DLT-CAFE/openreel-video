@@ -26,6 +26,8 @@ import {
 import { useTtsAudioStore } from "../../stores/tts-store";
 import { toast } from "../../stores/notification-store";
 import { saveFileHandle, saveDirectoryHandle } from "../../services/media-storage";
+import { FolderImportButton } from "./media-import/FolderImportButton"; // DLT Cafe
+import { summarizeScan, type FolderScan } from "./media-import/folder-import"; // DLT Cafe
 import { ToolcraftButton as Button } from "@openreel/ui";
 import { ToolcraftIconButton as IconButton } from "@openreel/ui";
 import { ToolcraftSelectableCard as SelectableCard } from "@openreel/ui";
@@ -950,6 +952,41 @@ export const AssetsPanel: React.FC = () => {
     fileInputRef.current?.click();
   }, []);
 
+  // DLT Cafe: import every media file in a folder (recursive).
+  const handleFolderScan = useCallback(
+    async (scan: FolderScan) => {
+      if (scan.entries.length === 0) {
+        setIsImporting(false);
+        setImportProgress("");
+        toast.info("Import folder", `No media files found in “${scan.folderName || "folder"}”.`);
+        return;
+      }
+      setIsImporting(true);
+      let imported = 0;
+      let failed = 0;
+      try {
+        for (let i = 0; i < scan.entries.length; i++) {
+          const { file, handle, relativePath } = scan.entries[i];
+          setImportProgress(`Importing ${relativePath} (${i + 1}/${scan.entries.length})...`);
+          if (handle) {
+            try { await saveFileHandle(file.name, file.size, handle); } catch { /* best-effort */ }
+          }
+          try {
+            const result = await importMedia(file);
+            if (result.success) imported++; else failed++;
+          } catch {
+            failed++;
+          }
+        }
+      } finally {
+        setIsImporting(false);
+        setImportProgress("");
+      }
+      (failed ? toast.warning : toast.success)("Import folder", summarizeScan(scan, imported, failed));
+    },
+    [importMedia],
+  );
+
   const handleImportBackground = useCallback(
     async (preset: BackgroundPreset) => {
       setGeneratingBackground(preset.id);
@@ -1031,6 +1068,11 @@ export const AssetsPanel: React.FC = () => {
                   </svg>
                   Import
                 </button>
+                <FolderImportButton
+                  disabled={isImporting}
+                  onScanning={(message) => { setIsImporting(true); setImportProgress(message); }}
+                  onScan={(scan) => void handleFolderScan(scan)}
+                />
                 <button
                   type="button"
                   aria-label="Record"
