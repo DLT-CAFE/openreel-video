@@ -455,7 +455,7 @@ export const Toolbar: React.FC = () => {
               onClick={openExportDialog}
               disabled={!hasTimelineContent}
               title={hasTimelineContent ? "Choose export settings" : "Add media or text to the timeline to export"}
-              className="rounded-l-[8px] rounded-r-none bg-accent px-[18px] py-[9px] text-[13px] font-semibold text-white disabled:opacity-50 disabled:cursor-not-allowed"
+              className="rounded-l-[8px] rounded-r-none bg-accent px-[18px] py-[9px] text-[13px] font-semibold text-accent-fg disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Export
             </button>

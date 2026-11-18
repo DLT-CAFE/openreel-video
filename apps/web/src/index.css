@@ -36,19 +36,20 @@
   /* light theme — Claude Design "Editor" mock (emerald brand accent, Inter) */
   :root,
   [data-theme="light"] {
-    --bg: #f4f4f6;            /* window / app background */
+    /* DLT Cafe: contrast raised to WCAG AA (text >= 4.5:1, input borders >= 3:1) */
+    --bg: #f2f2f5;            /* window / app background */
     --bg-1: #ffffff;          /* cards & elevated surfaces */
-    --bg-2: #f0f0f3;          /* recessed insets, pills, search fields */
-    --bg-3: #ececed;          /* segmented-control track */
+    --bg-2: #eeeef2;          /* recessed insets, pills, search fields */
+    --bg-3: #e6e6eb;          /* segmented-control track */
     --bg-elev: #ffffff;
-    --border: #e7e7ea;        /* card / input borders */
-    --border-strong: #d4d4d8;
+    --border: #d4d4da;        /* card / input borders */
+    --border-strong: #8e8e96;
     --fg: #1d1d1f;            /* primary text */
     --fg-2: #3a3a3c;          /* secondary text */
-    --fg-3: #7c7c82;          /* tertiary / labels */
-    --fg-muted: #9a9a9f;      /* muted / placeholder */
-    --hover: #f0f0f3;
-    --selected: #e6f9f1;      /* emerald-soft selected state */
+    --fg-3: #5f5f66;          /* tertiary / labels */
+    --fg-muted: #64646b;      /* muted / placeholder */
+    --hover: #ebebf0;
+    --selected: #e3f5ed;      /* emerald-soft selected state */
     --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.06);
     --shadow-md: 0 6px 20px rgba(0, 0, 0, 0.08);
     --shadow-lg: 0 24px 60px rgba(0, 0, 0, 0.16);
@@ -61,9 +62,9 @@
     --screen-bg: #ffffff;
 
     /* accent (brand emerald #10b981 — matches the OpenReel logo) */
-    --accent: #10b981;
-    --accent-strong: #059669;
-    --accent-soft: #e6f9f1;
+    --accent: #067a55;        /* DLT Cafe: darker emerald so text/fills pass AA on white */
+    --accent-strong: #05664a;
+    --accent-soft: #e3f5ed;
     --accent-fg: #ffffff;
     --accent-glow: rgba(16, 185, 129, 0.35);
 
@@ -74,37 +75,38 @@
     --c-music: #14b8a6;
   }
 
-  /* dark theme — cinematic, near-black like reference */
+  /* dark theme — DLT Cafe: lifted surfaces (was near-black) and higher
+     text/border contrast; every text token is >= 4.5:1 on every surface */
   [data-theme="dark"],
   .dark {
-    --bg: oklch(0.12 0.005 240);
-    --bg-1: oklch(0.16 0.006 240);
-    --bg-2: oklch(0.2 0.007 240);
-    --bg-3: oklch(0.24 0.008 240);
-    --bg-elev: oklch(0.22 0.007 240);
-    --border: oklch(0.26 0.008 240);
-    --border-strong: oklch(0.34 0.01 240);
-    --fg: oklch(0.97 0.003 240);
-    --fg-2: oklch(0.78 0.008 240);
-    --fg-3: oklch(0.6 0.012 240);
-    --fg-muted: oklch(0.48 0.012 240);
-    --hover: oklch(0.22 0.009 240);
-    --selected: oklch(0.30 0.03 162);
-    --shadow-sm: 0 1px 0 oklch(0 0 0 / 0.4), 0 1px 2px oklch(0 0 0 / 0.3);
-    --shadow-md: 0 1px 0 oklch(0 0 0 / 0.5), 0 6px 24px oklch(0 0 0 / 0.4);
-    --shadow-lg: 0 1px 0 oklch(0 0 0 / 0.6), 0 24px 60px oklch(0 0 0 / 0.5);
-    --track-bg: oklch(0.12 0.006 240);
-    --tl-bg: oklch(0.1 0.005 240);
-    --waveform: oklch(0.78 0.16 162 / 0.85);
-    --stage-bg: oklch(0.08 0.004 240);
+    --bg: oklch(0.215 0.006 250);
+    --bg-1: oklch(0.25 0.007 250);
+    --bg-2: oklch(0.29 0.008 250);
+    --bg-3: oklch(0.33 0.009 250);
+    --bg-elev: oklch(0.31 0.008 250);
+    --border: oklch(0.4 0.01 250);
+    --border-strong: oklch(0.56 0.012 250);
+    --fg: oklch(0.97 0.003 250);
+    --fg-2: oklch(0.87 0.006 250);
+    --fg-3: oklch(0.78 0.01 250);
+    --fg-muted: oklch(0.7 0.012 250);
+    --hover: oklch(0.31 0.009 250);
+    --selected: oklch(0.36 0.05 162);
+    --shadow-sm: 0 1px 0 oklch(0 0 0 / 0.3), 0 1px 2px oklch(0 0 0 / 0.25);
+    --shadow-md: 0 1px 0 oklch(0 0 0 / 0.35), 0 6px 24px oklch(0 0 0 / 0.35);
+    --shadow-lg: 0 1px 0 oklch(0 0 0 / 0.45), 0 24px 60px oklch(0 0 0 / 0.45);
+    --track-bg: oklch(0.235 0.006 250);
+    --tl-bg: oklch(0.225 0.006 250);
+    --waveform: oklch(0.8 0.15 162 / 0.85);
+    --stage-bg: oklch(0.18 0.005 250);
     /* the preview "screen" itself (canvas + letterbox): black in dark */
     --screen-bg: oklch(0 0 0);
 
     /* accent (brand emerald — matches the OpenReel logo) */
-    --accent: oklch(0.7 0.15 162);
-    --accent-strong: oklch(0.63 0.16 162);
-    --accent-soft: oklch(0.7 0.15 162 / 0.2);
-    --accent-fg: oklch(0.99 0 0);
+    --accent: oklch(0.74 0.15 162);
+    --accent-strong: oklch(0.66 0.16 162);
+    --accent-soft: oklch(0.74 0.15 162 / 0.2);
+    --accent-fg: oklch(0.2 0.01 250); /* dark text on the bright accent (8:1) */
     --accent-glow: oklch(0.7 0.15 162 / 0.45);
   }
 
@@ -128,41 +130,41 @@
     --card-foreground: 240 10% 4%;
     --popover: 0 0% 100%;
     --popover-foreground: 240 10% 4%;
-    --primary: 160 84% 39%;
+    --primary: 161 91% 25%;
     --primary-foreground: 0 0% 100%;
     --secondary: 240 5% 96%;
     --secondary-foreground: 240 6% 10%;
     --muted: 240 5% 96%;
-    --muted-foreground: 240 4% 46%;
+    --muted-foreground: 240 4% 39%;
     --accent-hsl: 240 5% 96%;
     --accent-foreground: 240 6% 10%;
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 98%;
-    --input: 240 6% 90%;
-    --ring: 160 84% 39%;
+    --input: 240 5% 80%;
+    --ring: 161 91% 25%;
     --radius: 0.625rem;
   }
 
   [data-theme="dark"],
   .dark {
-    --background: 220 12% 9%;
-    --foreground: 0 0% 95%;
-    --card: 220 10% 13%;
-    --card-foreground: 0 0% 95%;
-    --popover: 220 10% 13%;
-    --popover-foreground: 0 0% 95%;
-    --primary: 158 64% 52%;
-    --primary-foreground: 0 0% 100%;
-    --secondary: 220 8% 18%;
-    --secondary-foreground: 0 0% 95%;
-    --muted: 220 8% 18%;
-    --muted-foreground: 220 8% 65%;
-    --accent-hsl: 220 8% 22%;
-    --accent-foreground: 0 0% 95%;
-    --destructive: 0 62% 50%;
-    --destructive-foreground: 0 0% 95%;
-    --input: 220 8% 24%;
-    --ring: 158 64% 52%;
+    --background: 210 9% 13%;
+    --foreground: 0 0% 96%;
+    --card: 210 8% 16%;
+    --card-foreground: 0 0% 96%;
+    --popover: 210 8% 17%;
+    --popover-foreground: 0 0% 96%;
+    --primary: 157 61% 48%;
+    --primary-foreground: 210 10% 9%;
+    --secondary: 210 7% 21%;
+    --secondary-foreground: 0 0% 96%;
+    --muted: 210 7% 21%;
+    --muted-foreground: 210 6% 72%;
+    --accent-hsl: 210 7% 25%;
+    --accent-foreground: 0 0% 96%;
+    --destructive: 0 70% 58%;
+    --destructive-foreground: 0 0% 98%;
+    --input: 210 6% 36%;
+    --ring: 157 61% 48%;
   }
 
   html,
